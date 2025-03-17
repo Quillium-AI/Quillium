@@ -13,9 +13,6 @@ type Config struct {
 	// AI service configuration
 	AIEndpoint string `json:"ai_endpoint"`
 	APIKey     string `json:"api_key"`
-
-	// Database configuration
-	DBPath string `json:"db_path"`
 }
 
 var (
@@ -31,7 +28,6 @@ func Get() *Config {
 			Port:       getEnv("PORT", "8080"),
 			AIEndpoint: getEnv("AI_ENDPOINT", "https://api.openai.com/v1"),
 			APIKey:     getEnv("API_KEY", ""),
-			DBPath:     getEnv("DB_PATH", "./data.db"),
 		}
 	})
 

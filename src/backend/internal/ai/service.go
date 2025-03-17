@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Quillium-AI/Quillium/internal/config"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/config"
 )
 
 // Service provides methods for interacting with AI providers

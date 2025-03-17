@@ -1,14 +1,13 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/Quillium-AI/Quillium/internal/config"
-	"github.com/Quillium-AI/Quillium/internal/models"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/config"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/models"
 )
 
 // SearchService provides methods for searching external sources

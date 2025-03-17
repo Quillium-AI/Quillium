@@ -7,19 +7,25 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Quillium-AI/Quillium/internal/api"
-	"github.com/Quillium-AI/Quillium/internal/config"
-	"github.com/Quillium-AI/Quillium/internal/db"
-	"github.com/Quillium-AI/Quillium/internal/middleware"
-	"github.com/Quillium-AI/Quillium/internal/websocket"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/api"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/config"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/middleware"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/websocket"
 )
 
 func main() {
 	// Initialize configuration
 	cfg := config.Get()
 
+	// Create data directory if it doesn't exist
+	dataDir := filepath.Join(".", "data")
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		log.Fatalf("Failed to create data directory: %v", err)
+	}
+
 	// Initialize database
-	database, err := db.Initialize(cfg.DBPath)
+	database, err := db.Initialize(dataDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
@@ -42,7 +48,7 @@ func main() {
 	// API routes
 	mux.HandleFunc("/api/query", api.HandleQuery)
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		websocket.ServeWs(hub, w, r)
+		websocket.HandleWS(hub, w, r)
 	})
 
 	// Static file server for frontend

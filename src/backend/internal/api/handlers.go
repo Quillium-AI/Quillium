@@ -20,8 +20,8 @@ type QueryRequest struct {
 
 // QueryResponse represents the AI's response to a query
 type QueryResponse struct {
-	Answer   string   `json:"answer"`
-	Sources  []string `json:"sources,omitempty"`
+	Answer   string                 `json:"answer"`
+	Sources  []string               `json:"sources,omitempty"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 

@@ -16,19 +16,19 @@ type Message struct {
 }
 
 // Client represents a WebSocket client connection
-type Client struct {
-	ID     string
-	Conn   *websocket.Conn
-	Send   chan []byte
-	Hub    *Hub
-	Mutex  sync.Mutex
+type client struct {
+	ID    string
+	Conn  *websocket.Conn
+	Send  chan []byte
+	Hub   *Hub
+	Mutex sync.Mutex
 }
 
 // Hub maintains the set of active clients and broadcasts messages to them
 type Hub struct {
-	Clients    map[*Client]bool
-	Register   chan *Client
-	Unregister chan *Client
+	Clients    map[*client]bool
+	Register   chan *client
+	Unregister chan *client
 	Broadcast  chan []byte
 	Mutex      sync.Mutex
 }
@@ -36,9 +36,9 @@ type Hub struct {
 // NewHub creates a new Hub instance
 func NewHub() *Hub {
 	return &Hub{
-		Clients:    make(map[*Client]bool),
-		Register:   make(chan *Client),
-		Unregister: make(chan *Client),
+		Clients:    make(map[*client]bool),
+		Register:   make(chan *client),
+		Unregister: make(chan *client),
 		Broadcast:  make(chan []byte),
 	}
 }
@@ -87,15 +87,15 @@ var Upgrader = websocket.Upgrader{
 	},
 }
 
-// ServeWs handles WebSocket requests from clients
-func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+// HandleWS handles WebSocket requests from clients
+func HandleWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	client := &Client{
+	client := &client{
 		ID:   r.RemoteAddr,
 		Conn: conn,
 		Send: make(chan []byte, 256),
@@ -110,7 +110,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 }
 
 // readPump pumps messages from the WebSocket connection to the hub
-func (c *Client) readPump() {
+func (c *client) readPump() {
 	defer func() {
 		c.Hub.Unregister <- c
 		c.Conn.Close()
@@ -141,7 +141,7 @@ func (c *Client) readPump() {
 }
 
 // writePump pumps messages from the hub to the WebSocket connection
-func (c *Client) writePump() {
+func (c *client) writePump() {
 	defer func() {
 		c.Conn.Close()
 	}()
