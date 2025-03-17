@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # Update frontend dependencies (pnpm)
+  - package-ecosystem: "npm"
+    directory: "/src/frontend"  # Change this to your frontend project path
+    schedule:
+      interval: "daily"
+    versioning-strategy: "increase-if-necessary"
+    commit-message:
+      prefix: "[dependabot]"
+
+  # Security updates for Go backend (does NOT update versions)
+  - package-ecosystem: "gomod"
+    directory: "/src/backend"  # Change this to your Go project path
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "[dependabot-security]"
