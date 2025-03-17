@@ -1,18 +1,21 @@
+# Go binary files
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 
+# Go test files
 *.test
 
+# Go build output
 *.out
 
 # Go workspace file
 go.work
 go.work.sum
 
-# env file
+# Environment variables
 .env
 
 # Logs
@@ -24,6 +27,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node.js dependencies and build output
 node_modules
 dist
 dist-ssr
@@ -39,3 +43,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Database files
+*.db
+data/
+
+# Build artifacts
+bin/
+tmp/

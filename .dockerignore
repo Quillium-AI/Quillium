@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+.github
+
+# Docker
+.docker
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Binaries
+bin/
+tmp/
+
+# Environment variables
+.env
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Database
+*.db
+data/
+
+# Logs
+logs/
+*.log
+
+# Documentation
+DOCKER_README.md
+
+# Tests
+**/*_test.go
+**/*.test.js
+**/*.spec.js
