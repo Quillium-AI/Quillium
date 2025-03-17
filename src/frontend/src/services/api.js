@@ -6,7 +6,12 @@
 
 // Base URLs for API and WebSocket requests
 const API_BASE_URL = '/api';
-const WS_URL = `ws://${window.location.host}/ws`;
+
+// For development, use localhost:8080
+// In production, this would use window.location.host
+const WS_URL = import.meta.env.DEV 
+  ? `ws://localhost:8080/ws` 
+  : `ws://${window.location.host}/ws`;
 
 /**
  * Fetch wrapper with error handling
