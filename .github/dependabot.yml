@@ -2,17 +2,35 @@ version: 2
 updates:
   # Update frontend dependencies (pnpm)
   - package-ecosystem: "npm"
-    directory: "/src/frontend"  # Change this to your frontend project path
+    directory: "/src/frontend"
     schedule:
       interval: "daily"
     versioning-strategy: "increase-if-necessary"
     commit-message:
       prefix: "[dependabot]"
+    open-pull-requests-limit: 1
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
+    registries:
+      - npm-github
 
   # Security updates for Go backend (does NOT update versions)
   - package-ecosystem: "gomod"
-    directory: "/src/backend"  # Change this to your Go project path
+    directory: "/src/backend"
     schedule:
       interval: "daily"
     commit-message:
       prefix: "[dependabot-security]"
+    open-pull-requests-limit: 1
+    groups:
+      backend-dependencies:
+        patterns:
+          - "*"
+
+registries:
+  npm-github:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.GITHUB_TOKEN}}
