@@ -17,23 +17,12 @@ Quillium is an open-source AI engine designed to be a self-hosted alternative to
 src/
 ├── backend/           # Go backend
 │   ├── internal/      # Internal packages
-│   │   ├── ai/        # AI service integration
-│   │   ├── api/       # API handlers
-│   │   ├── config/    # Configuration management
 │   │   ├── db/        # Database operations
-│   │   ├── middleware/# HTTP middleware
-│   │   ├── models/    # Data models
-│   │   ├── services/  # Business logic services
-│   │   ├── utils/     # Utility functions
-│   │   └── websocket/ # WebSocket handlers
 │   └── main.go        # Entry point
 └── frontend/          # React frontend
     ├── public/        # Static assets
     └── src/           # Source code
-        ├── components/# UI components
-        ├── hooks/     # Custom React hooks
-        ├── services/  # API client services
-        └── utils/     # Utility functions
+        └── assets
 ```
 
 ## Installation
@@ -76,15 +65,7 @@ npm run dev
 Quillium can be configured using environment variables. Copy the `.env.example` file to `.env` and modify the values as needed:
 
 ```
-# Server configuration
-PORT=8080
-
-# AI service configuration
-AI_ENDPOINT=https://api.openai.com/v1
-API_KEY=your_api_key_here
-
-# Database configuration
-DB_PATH=./data.db
+# temp
 ```
 
 ## Usage
