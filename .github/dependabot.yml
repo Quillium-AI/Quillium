@@ -33,4 +33,3 @@ registries:
   npm-github:
     type: npm-registry
     url: https://npm.pkg.github.com
-    token: ${{secrets.GITHUB_TOKEN}}
