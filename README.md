@@ -56,8 +56,8 @@ go run main.go
 
 # In another terminal, build and run the frontend
 cd src/frontend
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 ## Configuration
