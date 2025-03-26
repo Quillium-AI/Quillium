@@ -1,162 +1,98 @@
 package db
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"sync"
-	"time"
+	"context"
+	"errors"
+	"os"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/jackc/pgx/v5"
 )
 
-// DB is a wrapper around badger.DB
 type DB struct {
-	*badger.DB
+	*pgx.Conn
 }
 
-var (
-	instance *DB
-	once     sync.Once
-)
+func (d *DB) Close() error {
+	return d.Conn.Close(context.Background())
+}
 
-// Initialize sets up the database connection
-func Initialize(dbPath string) (*DB, error) {
-	var err error
-	once.Do(func() {
-		opts := badger.DefaultOptions(dbPath)
-		opts.Logger = nil // Disable logging
+func (d *DB) Ping() error {
+	return d.Conn.Ping(context.Background())
+}
 
-		db, dbErr := badger.Open(opts)
-		if dbErr != nil {
-			err = fmt.Errorf("failed to open database: %w", dbErr)
-			return
-		}
-
-		instance = &DB{DB: db}
-	})
-
+func Initialize() (*DB, error) {
+	pgxConn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
-		return nil, err
+		return nil, errors.New("failed to connect to database: " + err.Error())
 	}
 
-	return instance, nil
-}
-
-// GetInstance returns the singleton DB instance
-func GetInstance() *DB {
-	if instance == nil {
-		log.Fatal("Database not initialized. Call Initialize first.")
-	}
-	return instance
-}
-
-// Close closes the database connection
-func (db *DB) Close() error {
-	return db.DB.Close()
-}
-
-// SaveSetting saves a key-value setting to the database
-func (db *DB) SaveSetting(key, value string) error {
-	return db.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte("setting:"+key), []byte(value))
-	})
-}
-
-// GetSetting retrieves a setting from the database
-func (db *DB) GetSetting(key string) (string, error) {
-	var value string
-	err := db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte("setting:" + key))
-		if err != nil {
-			return err
-		}
-
-		return item.Value(func(val []byte) error {
-			value = string(val)
-			return nil
-		})
-	})
-
-	if err == badger.ErrKeyNotFound {
-		return "", nil
-	}
-
-	return value, err
-}
-
-// QueryRecord represents a stored query
-type QueryRecord struct {
-	ID        string    `json:"id"`
-	Query     string    `json:"query"`
-	Answer    string    `json:"answer"`
-	Sources   []string  `json:"sources,omitempty"`
-	Timestamp time.Time `json:"timestamp"`
-}
-
-// SaveQuery saves a query and its response to the database
-func (db *DB) SaveQuery(query, answer string, sources []string) error {
-	record := QueryRecord{
-		ID:        fmt.Sprintf("query:%d", time.Now().UnixNano()),
-		Query:     query,
-		Answer:    answer,
-		Sources:   sources,
-		Timestamp: time.Now(),
-	}
-
-	data, err := json.Marshal(record)
+	err = CreateTables(pgxConn)
 	if err != nil {
-		return err
+		return nil, errors.New("failed to create tables: " + err.Error())
 	}
 
-	return db.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte(record.ID), data)
-	})
+	return &DB{Conn: pgxConn}, nil
 }
 
-// GetRecentQueries retrieves recent queries from the database
-func (db *DB) GetRecentQueries(limit int) ([]map[string]interface{}, error) {
-	result := []map[string]interface{}{}
-
-	err := db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		opts.PrefetchSize = limit
-		opts.Reverse = true // To get the most recent first
-
-		it := txn.NewIterator(opts)
-		defer it.Close()
-
-		prefix := []byte("query:")
-		count := 0
-
-		for it.Seek(append(prefix, 0xFF)); it.ValidForPrefix(prefix) && count < limit; it.Next() {
-			item := it.Item()
-
-			err := item.Value(func(val []byte) error {
-				var record QueryRecord
-				if err := json.Unmarshal(val, &record); err != nil {
-					return err
-				}
-
-				result = append(result, map[string]interface{}{
-					"id":        record.ID,
-					"query":     record.Query,
-					"answer":    record.Answer,
-					"sources":   record.Sources,
-					"timestamp": record.Timestamp,
-				})
-
-				count++
-				return nil
-			})
-
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	return result, err
+func CreateTables(conn *pgx.Conn) error {
+	query := `
+		CREATE TABLE IF NOT EXISTS sso_logins (
+			id SERIAL PRIMARY KEY,
+			sso_client_id VARCHAR(255) NOT NULL UNIQUE,
+			sso_client_secret VARCHAR(255) NOT NULL,
+			sso_provider VARCHAR(255) NOT NULL UNIQUE,
+			sso_redirect_url VARCHAR(255) NOT NULL,
+			sso_type VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+		CREATE TABLE IF NOT EXISTS users (
+			id SERIAL PRIMARY KEY,
+			email VARCHAR(255) NOT NULL UNIQUE,
+			password VARCHAR(255) NULL,
+			sso_id VARCHAR(255) NULL,
+			is_sso BOOLEAN NOT NULL DEFAULT FALSE,
+			sso_provider_id INT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (sso_provider_id) REFERENCES sso_logins(id)
+		);
+		CREATE TABLE IF NOT EXISTS chat_contents (
+			id SERIAL PRIMARY KEY,
+			message JSONB NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+		CREATE TABLE IF NOT EXISTS user_chats (
+			id SERIAL PRIMARY KEY,
+			user_id INT NOT NULL,
+			chat_id INT NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			FOREIGN KEY (chat_id) REFERENCES chat_contents(id)
+		);
+		CREATE TABLE IF NOT EXISTS admin_settings (
+			version SERIAL PRIMARY KEY,
+			enable_signup BOOLEAN NOT NULL,
+			is_admin INT NOT NULL,
+			firecrawl_base_url VARCHAR(255) NOT NULL,
+			firecrawl_api_key VARCHAR(255) NOT NULL,
+			openai_base_url VARCHAR(255) NOT NULL,
+			openai_api_key VARCHAR(255) NOT NULL,
+			llm_profile_speed VARCHAR(255) NOT NULL,
+			llm_profile_balanced VARCHAR(255) NOT NULL,
+			llm_profile_quality VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (is_admin) REFERENCES users(id)
+		);
+		CREATE TABLE IF NOT EXISTS user_settings (
+			id SERIAL PRIMARY KEY,
+			user_id INT NOT NULL,
+			dark_mode BOOLEAN NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id)
+		);
+	`
+	_, err := conn.Exec(context.Background(), query)
+	if err != nil {
+		return errors.New("failed to create tables: " + err.Error())
+	}
+	return nil
 }
