@@ -5,14 +5,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
     volumes:
-      - ./data:/app/data
+      - ./data_dev:/app/data
     environment:
-      - PORT=8080
-      - AI_ENDPOINT=https://api.openai.com/v1
-      # Uncomment and set your API key
-      # - API_KEY=your_api_key_here
-      - DB_PATH=/app/data/quillium.db
+      - DATABASE_URL=postgresql://quillium:quillium_password@postgres:5432/quillium_db
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=quillium
+      - POSTGRES_PASSWORD=quillium_password
+      - POSTGRES_DB=quillium_db
     restart: unless-stopped
