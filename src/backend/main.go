@@ -11,7 +11,7 @@ var dbConn *db.DB
 
 func init() {
 	var err error
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	dbConn, err = db.Initialize()
 	if err != nil {
 		panic(err)
