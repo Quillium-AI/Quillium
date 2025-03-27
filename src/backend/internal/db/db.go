@@ -103,10 +103,10 @@ func CreateTables(conn *pgx.Conn) error {
 	return nil
 }
 
-func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProviderId *int) error {
+func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProviderId *int, isAdmin bool) error {
 	query := `
-		INSERT INTO users (email, password_hash, is_sso, sso_provider_id)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO users (email, password_hash, is_sso, sso_provider_id, is_admin)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
 	`
 	querySettings := `
@@ -114,7 +114,7 @@ func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProvid
 		VALUES ($1, '{}')
 	`
 	var id int
-	err := d.Conn.QueryRow(context.Background(), query, email, passwordHash, isSso, ssoProviderId).Scan(&id)
+	err := d.Conn.QueryRow(context.Background(), query, email, passwordHash, isSso, ssoProviderId, isAdmin).Scan(&id)
 	if err != nil {
 		return errors.New("failed to create user: " + err.Error())
 	}
@@ -139,7 +139,7 @@ func (d *DB) CreateAdminUserAndSettings(email string, passwordHash string) error
 		return errors.New("failed to initialize admin settings: " + err.Error())
 	}
 
-	err = d.CreateUser(email, passwordHash, false, nil)
+	err = d.CreateUser(email, passwordHash, false, nil, true)
 	if err != nil {
 		return errors.New("failed to create admin user: " + err.Error())
 	}
@@ -149,7 +149,7 @@ func (d *DB) CreateAdminUserAndSettings(email string, passwordHash string) error
 }
 
 func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) error {
-	return d.CreateUser(email, "", true, &ssoProviderId)
+	return d.CreateUser(email, "", true, &ssoProviderId, false)
 }
 
 func (d *DB) CreateSsoProvider(ssoClientId string, ssoClientSecret string, ssoProvider string, ssoRedirectUrl string, ssoAuthType string) error {
