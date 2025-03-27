@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"log"
 	"os"
 
 	"github.com/jackc/pgx/v5"
@@ -100,4 +101,261 @@ func CreateTables(conn *pgx.Conn) error {
 		return errors.New("failed to create tables: " + err.Error())
 	}
 	return nil
+}
+
+func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProviderId *int) error {
+	query := `
+		INSERT INTO users (email, password_hash, is_sso, sso_provider_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
+	`
+	querySettings := `
+		INSERT INTO user_settings (user_id, config)
+		VALUES ($1, '{}')
+	`
+	var id int
+	err := d.Conn.QueryRow(context.Background(), query, email, passwordHash, isSso, ssoProviderId).Scan(&id)
+	if err != nil {
+		return errors.New("failed to create user: " + err.Error())
+	}
+	_, err = d.Conn.Exec(context.Background(), querySettings, id)
+	if err != nil {
+		return errors.New("failed to create user settings: " + err.Error())
+	}
+	log.Printf("Created user with ID: %d", id)
+	return nil
+}
+
+func (d *DB) CreateAdminUserAndSettings(email string, passwordHash string) error {
+	// First create the admin settings with empty config
+	query := `
+		INSERT INTO admin_settings (config)
+		VALUES ('{}')
+		RETURNING version
+	`
+	var version int
+	err := d.Conn.QueryRow(context.Background(), query).Scan(&version)
+	if err != nil {
+		return errors.New("failed to initialize admin settings: " + err.Error())
+	}
+
+	err = d.CreateUser(email, passwordHash, false, nil)
+	if err != nil {
+		return errors.New("failed to create admin user: " + err.Error())
+	}
+
+	log.Printf("Created admin user and admin settings")
+	return nil
+}
+
+func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) error {
+	return d.CreateUser(email, "", true, &ssoProviderId)
+}
+
+func (d *DB) CreateSsoProvider(ssoClientId string, ssoClientSecret string, ssoProvider string, ssoRedirectUrl string, ssoAuthType string) error {
+	query := `
+		INSERT INTO sso_logins (sso_client_id, sso_client_secret, sso_provider, sso_redirect_url, sso_auth_type)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
+	var id int
+	err := d.Conn.QueryRow(context.Background(), query, ssoClientId, ssoClientSecret, ssoProvider, ssoRedirectUrl, ssoAuthType).Scan(&id)
+	if err != nil {
+		return errors.New("failed to create sso provider: " + err.Error())
+	}
+	log.Printf("Created sso provider with ID: %d", id)
+	return nil
+}
+
+func (d *DB) CreateChat(userId int, content string) error { // need to replace with chat content struct type in future
+	query := `
+		INSERT INTO chat_contents (user_id, content)
+		VALUES ($1, $2)
+		RETURNING id
+	`
+	var id int
+	err := d.Conn.QueryRow(context.Background(), query, userId, content).Scan(&id)
+	if err != nil {
+		return errors.New("failed to create chat: " + err.Error())
+	}
+	log.Printf("Created chat with ID: %d", id)
+	return nil
+}
+
+func (d *DB) GetChats(userId int) ([]int, error) {
+	query := `
+		SELECT id FROM chat_contents WHERE user_id = $1
+	`
+	rows, err := d.Conn.Query(context.Background(), query, userId)
+	if err != nil {
+		return nil, errors.New("failed to get chats: " + err.Error())
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		err = rows.Scan(&id)
+		if err != nil {
+			return nil, errors.New("failed to get chats: " + err.Error())
+		}
+		ids = append(ids, id)
+	}
+
+	return ids, nil
+}
+
+func (d *DB) GetChatContent(chatId int) (string, error) { // need to replace with chat content struct type in future
+	query := `
+		SELECT content FROM chat_contents WHERE id = $1
+	`
+	var content string
+	err := d.Conn.QueryRow(context.Background(), query, chatId).Scan(&content)
+	if err != nil {
+		return "", errors.New("failed to get chat content: " + err.Error())
+	}
+	return content, nil
+}
+
+func (d *DB) DeleteChat(chatId int) error {
+	query := `
+		DELETE FROM chat_contents WHERE id = $1
+	`
+	_, err := d.Conn.Exec(context.Background(), query, chatId)
+	if err != nil {
+		return errors.New("failed to delete chat: " + err.Error())
+	}
+	log.Printf("Deleted chat with ID: %d", chatId)
+	return nil
+}
+
+func (d *DB) DeleteUser(userId int) error {
+	query := `
+		DELETE FROM users WHERE id = $1
+	`
+	_, err := d.Conn.Exec(context.Background(), query, userId)
+	if err != nil {
+		return errors.New("failed to delete user: " + err.Error())
+	}
+	log.Printf("Deleted user with ID: %d", userId)
+	return nil
+}
+
+func (d *DB) DeleteSsoProvider(ssoProviderId int) error {
+	query := `
+		DELETE FROM sso_logins WHERE id = $1
+	`
+	_, err := d.Conn.Exec(context.Background(), query, ssoProviderId)
+	if err != nil {
+		return errors.New("failed to delete sso provider: " + err.Error())
+	}
+	log.Printf("Deleted sso provider with ID: %d", ssoProviderId)
+	return nil
+}
+
+func (d *DB) UpdateUserSettings(userId int, config map[string]interface{}) error {
+	query := `
+		UPDATE user_settings
+		SET config = $1
+		WHERE user_id = $2
+	`
+	_, err := d.Conn.Exec(context.Background(), query, config, userId)
+	if err != nil {
+		return errors.New("failed to update user settings: " + err.Error())
+	}
+	log.Printf("Updated user settings for user with ID: %d", userId)
+	return nil
+}
+
+func (d *DB) GetUserSettings(userId int) (map[string]interface{}, error) {
+	query := `
+		SELECT config FROM user_settings WHERE user_id = $1
+	`
+	var config map[string]interface{}
+	err := d.Conn.QueryRow(context.Background(), query, userId).Scan(&config)
+	if err != nil {
+		return nil, errors.New("failed to get user settings: " + err.Error())
+	}
+	return config, nil
+}
+
+func (d *DB) UpdateAdminSettings(config map[string]interface{}) error {
+	query := `
+		UPDATE admin_settings
+		SET config = $1
+		WHERE version = (SELECT MAX(version) FROM admin_settings)
+	`
+	_, err := d.Conn.Exec(context.Background(), query, config)
+	if err != nil {
+		return errors.New("failed to update admin settings: " + err.Error())
+	}
+	log.Printf("Updated admin settings")
+	return nil
+}
+
+func (d *DB) GetAdminSettings() (map[string]interface{}, error) {
+	query := `
+		SELECT config FROM admin_settings
+		WHERE version = (SELECT MAX(version) FROM admin_settings)
+	`
+	var config map[string]interface{}
+	err := d.Conn.QueryRow(context.Background(), query).Scan(&config)
+	if err != nil {
+		return nil, errors.New("failed to get admin settings: " + err.Error())
+	}
+	return config, nil
+}
+
+func (d *DB) UpdateChatContent(chatId int, content string) error {
+	query := `
+		UPDATE chat_contents
+		SET content = $1
+		WHERE id = $2
+	`
+	_, err := d.Conn.Exec(context.Background(), query, content, chatId)
+	if err != nil {
+		return errors.New("failed to update chat content: " + err.Error())
+	}
+	log.Printf("Updated chat content for chat with ID: %d", chatId)
+	return nil
+}
+
+func (d *DB) UpdateUserPassword(userId int, passwordHash string) error {
+	query := `
+		UPDATE users
+		SET password_hash = $1
+		WHERE id = $2
+	`
+	_, err := d.Conn.Exec(context.Background(), query, passwordHash, userId)
+	if err != nil {
+		return errors.New("failed to update user password: " + err.Error())
+	}
+	log.Printf("Updated user password for user with ID: %d", userId)
+	return nil
+}
+
+func (d *DB) UpdateUserEmail(userId int, email string) error {
+	query := `
+		UPDATE users
+		SET email = $1
+		WHERE id = $2
+	`
+	_, err := d.Conn.Exec(context.Background(), query, email, userId)
+	if err != nil {
+		return errors.New("failed to update user email: " + err.Error())
+	}
+	log.Printf("Updated user email for user with ID: %d", userId)
+	return nil
+}
+
+func (d *DB) AdminExists() (bool, error) {
+	query := `
+		SELECT EXISTS(SELECT 1 FROM users WHERE is_admin = TRUE LIMIT 1)
+	`
+	var exists bool
+	err := d.Conn.QueryRow(context.Background(), query).Scan(&exists)
+	if err != nil {
+		return false, errors.New("failed to check if admin exists: " + err.Error())
+	}
+	return exists, nil
 }

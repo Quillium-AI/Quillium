@@ -9,6 +9,8 @@ services:
       - ./data_dev:/app/data
     environment:
       - DATABASE_URL=postgresql://quillium:quillium_password@postgres:5432/quillium_db
+      - ADMIN_EMAIL=quillium@quillium.ai
+      - ADMIN_PASSWORD=quillium_password
     depends_on:
       - postgres
 
