@@ -6,6 +6,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/settings"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/sso"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -103,7 +107,7 @@ func CreateTables(conn *pgx.Conn) error {
 	return nil
 }
 
-func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProviderId *int, isAdmin bool) error {
+func (d *DB) CreateUser(user *user.User) error {
 	query := `
 		INSERT INTO users (email, password_hash, is_sso, sso_provider_id, is_admin)
 		VALUES ($1, $2, $3, $4, $5)
@@ -114,7 +118,7 @@ func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProvid
 		VALUES ($1, '{}')
 	`
 	var id int
-	err := d.Conn.QueryRow(context.Background(), query, email, passwordHash, isSso, ssoProviderId, isAdmin).Scan(&id)
+	err := d.Conn.QueryRow(context.Background(), query, user.Email, user.PasswordHash, user.IsSso, user.SsoProviderID, user.IsAdmin).Scan(&id)
 	if err != nil {
 		return errors.New("failed to create user: " + err.Error())
 	}
@@ -126,35 +130,14 @@ func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProvid
 	return nil
 }
 
-func (d *DB) CreateAdminSettings(config string) error { //change to config type
-	// First create the admin settings with empty config
-	query := `
-		INSERT INTO admin_settings (config)
-		VALUES ($1)
-		RETURNING version
-	`
-	var version int
-	err := d.Conn.QueryRow(context.Background(), query, config).Scan(&version)
-	if err != nil {
-		return errors.New("failed to initialize admin settings: " + err.Error())
-	}
-
-	log.Printf("Created admin settings with version: %d", version)
-	return nil
-}
-
-func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) error {
-	return d.CreateUser(email, "", true, &ssoProviderId, false)
-}
-
-func (d *DB) CreateSsoProvider(ssoClientId string, ssoClientSecret string, ssoProvider string, ssoRedirectUrl string, ssoAuthType string) error {
+func (d *DB) CreateSsoProvider(ssoProvider *sso.SsoProvider) error {
 	query := `
 		INSERT INTO sso_logins (sso_client_id, sso_client_secret, sso_provider, sso_redirect_url, sso_auth_type)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
 	`
 	var id int
-	err := d.Conn.QueryRow(context.Background(), query, ssoClientId, ssoClientSecret, ssoProvider, ssoRedirectUrl, ssoAuthType).Scan(&id)
+	err := d.Conn.QueryRow(context.Background(), query, ssoProvider.ClientID, ssoProvider.ClientSecret, ssoProvider.Provider, ssoProvider.RedirectURL, ssoProvider.AuthType).Scan(&id)
 	if err != nil {
 		return errors.New("failed to create sso provider: " + err.Error())
 	}
@@ -162,14 +145,19 @@ func (d *DB) CreateSsoProvider(ssoClientId string, ssoClientSecret string, ssoPr
 	return nil
 }
 
-func (d *DB) CreateChat(userId int, content string) error { // need to replace with chat content struct type in future
+func (d *DB) CreateChat(userId int, chatContent *chats.ChatContent) error {
+	jsonStr, err := chatContent.ToJSON()
+	if err != nil {
+		return errors.New("failed to convert chat content to JSON: " + err.Error())
+	}
+
 	query := `
 		INSERT INTO chat_contents (user_id, content)
 		VALUES ($1, $2)
 		RETURNING id
 	`
 	var id int
-	err := d.Conn.QueryRow(context.Background(), query, userId, content).Scan(&id)
+	err = d.Conn.QueryRow(context.Background(), query, userId, jsonStr).Scan(&id)
 	if err != nil {
 		return errors.New("failed to create chat: " + err.Error())
 	}
@@ -200,16 +188,23 @@ func (d *DB) GetChats(userId int) ([]int, error) {
 	return ids, nil
 }
 
-func (d *DB) GetChatContent(chatId int) (string, error) { // need to replace with chat content struct type in future
+func (d *DB) GetChatContent(chatId int) (*chats.ChatContent, error) {
 	query := `
 		SELECT content FROM chat_contents WHERE id = $1
 	`
-	var content string
-	err := d.Conn.QueryRow(context.Background(), query, chatId).Scan(&content)
+	var jsonStr string
+	err := d.Conn.QueryRow(context.Background(), query, chatId).Scan(&jsonStr)
 	if err != nil {
-		return "", errors.New("failed to get chat content: " + err.Error())
+		return nil, errors.New("failed to get chat content: " + err.Error())
 	}
-	return content, nil
+
+	// Create an empty ChatContent instance to call the method on
+	var empty chats.ChatContent
+	chatContent, err := empty.FromJSON(jsonStr)
+	if err != nil {
+		return nil, errors.New("failed to parse chat content: " + err.Error())
+	}
+	return chatContent, nil
 }
 
 func (d *DB) DeleteChat(chatId int) error {
@@ -248,7 +243,7 @@ func (d *DB) DeleteSsoProvider(ssoProviderId int) error {
 	return nil
 }
 
-func (d *DB) UpdateUserSettings(userId int, config map[string]interface{}) error {
+func (d *DB) UpdateUserSettings(userId int, config *settings.UserSettings) error {
 	query := `
 		UPDATE user_settings
 		SET config = $1
@@ -262,19 +257,19 @@ func (d *DB) UpdateUserSettings(userId int, config map[string]interface{}) error
 	return nil
 }
 
-func (d *DB) GetUserSettings(userId int) (map[string]interface{}, error) {
+func (d *DB) GetUserSettings(userId int) (*settings.UserSettings, error) {
 	query := `
 		SELECT config FROM user_settings WHERE user_id = $1
 	`
-	var config map[string]interface{}
+	var config settings.UserSettings
 	err := d.Conn.QueryRow(context.Background(), query, userId).Scan(&config)
 	if err != nil {
 		return nil, errors.New("failed to get user settings: " + err.Error())
 	}
-	return config, nil
+	return &config, nil
 }
 
-func (d *DB) UpdateAdminSettings(config map[string]interface{}) error {
+func (d *DB) UpdateAdminSettings(config *settings.AdminSettings) error {
 	query := `
 		UPDATE admin_settings
 		SET config = $1
@@ -288,26 +283,30 @@ func (d *DB) UpdateAdminSettings(config map[string]interface{}) error {
 	return nil
 }
 
-func (d *DB) GetAdminSettings() (map[string]interface{}, error) {
+func (d *DB) GetAdminSettings() (*settings.AdminSettings, error) {
 	query := `
 		SELECT config FROM admin_settings
 		WHERE version = (SELECT MAX(version) FROM admin_settings)
 	`
-	var config map[string]interface{}
+	var config settings.AdminSettings
 	err := d.Conn.QueryRow(context.Background(), query).Scan(&config)
 	if err != nil {
 		return nil, errors.New("failed to get admin settings: " + err.Error())
 	}
-	return config, nil
+	return &config, nil
 }
 
-func (d *DB) UpdateChatContent(chatId int, content string) error {
+func (d *DB) UpdateChatContent(chatId int, chatContent *chats.ChatContent) error {
+	jsonStr, err := chatContent.ToJSON()
+	if err != nil {
+		return errors.New("failed to convert chat content to JSON: " + err.Error())
+	}
 	query := `
 		UPDATE chat_contents
 		SET content = $1
 		WHERE id = $2
 	`
-	_, err := d.Conn.Exec(context.Background(), query, content, chatId)
+	_, err = d.Conn.Exec(context.Background(), query, jsonStr, chatId)
 	if err != nil {
 		return errors.New("failed to update chat content: " + err.Error())
 	}
@@ -353,4 +352,48 @@ func (d *DB) AdminExists() (bool, error) {
 		return false, errors.New("failed to check if admin exists: " + err.Error())
 	}
 	return exists, nil
+}
+
+func (d *DB) UpdateUserIsAdmin(userId int, isAdmin bool) error {
+	query := `
+		UPDATE users
+		SET is_admin = $1
+		WHERE id = $2
+	`
+	_, err := d.Conn.Exec(context.Background(), query, isAdmin, userId)
+	if err != nil {
+		return errors.New("failed to update user is_admin: " + err.Error())
+	}
+	log.Printf("Updated user is_admin for user with ID: %d", userId)
+	return nil
+}
+
+func (d *DB) CreateAdminSettings(config *settings.AdminSettings) error {
+	// First create the admin settings with empty config
+	query := `
+		INSERT INTO admin_settings (config)
+		VALUES ($1)
+		RETURNING version
+	`
+	var version int
+	err := d.Conn.QueryRow(context.Background(), query, config).Scan(&version)
+	if err != nil {
+		return errors.New("failed to initialize admin settings: " + err.Error())
+	}
+
+	log.Printf("Created admin settings with version: %d", version)
+	return nil
+}
+
+func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) error {
+	// Create a User object with SSO information
+	user := &user.User{
+		Email:         email,
+		PasswordHash:  "",
+		IsSso:         true,
+		SsoUserID:     ssoUserId,
+		SsoProviderID: &ssoProviderId,
+		IsAdmin:       false,
+	}
+	return d.CreateUser(user)
 }

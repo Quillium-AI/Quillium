@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
 )
 
 var dbConn *db.DB
@@ -34,7 +35,13 @@ func init() {
 			log.Fatal("Warning: ADMIN_EMAIL or ADMIN_PASSWORD environment variables not set")
 		} else {
 			// Create admin user
-			err = dbConn.CreateUser(email, passwordHash, false, nil, true)
+			adminUser := &user.User{
+				Email:        email,
+				PasswordHash: passwordHash,
+				IsSso:        false,
+				IsAdmin:      true,
+			}
+			err = dbConn.CreateUser(adminUser)
 			if err != nil {
 				log.Fatal("Failed to create admin user:", err)
 			}
