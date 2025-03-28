@@ -126,25 +126,20 @@ func (d *DB) CreateUser(email string, passwordHash string, isSso bool, ssoProvid
 	return nil
 }
 
-func (d *DB) CreateAdminUserAndSettings(email string, passwordHash string) error {
+func (d *DB) CreateAdminSettings(config string) error { //change to config type
 	// First create the admin settings with empty config
 	query := `
 		INSERT INTO admin_settings (config)
-		VALUES ('{}')
+		VALUES ($1)
 		RETURNING version
 	`
 	var version int
-	err := d.Conn.QueryRow(context.Background(), query).Scan(&version)
+	err := d.Conn.QueryRow(context.Background(), query, config).Scan(&version)
 	if err != nil {
 		return errors.New("failed to initialize admin settings: " + err.Error())
 	}
 
-	err = d.CreateUser(email, passwordHash, false, nil, true)
-	if err != nil {
-		return errors.New("failed to create admin user: " + err.Error())
-	}
-
-	log.Printf("Created admin user and admin settings")
+	log.Printf("Created admin settings with version: %d", version)
 	return nil
 }
 

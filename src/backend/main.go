@@ -15,14 +15,13 @@ func init() {
 	time.Sleep(10 * time.Second)
 	dbConn, err = db.Initialize()
 	if err != nil {
-		panic(err)
+		log.Fatal("Failed to initialize database connection:", err)
 	}
 
 	// Check if admin user already exists
 	adminExists, err := dbConn.AdminExists()
 	if err != nil {
-		log.Println("Error checking if admin exists:", err)
-		panic(err)
+		log.Fatal("Error checking if admin exists:", err)
 	}
 
 	// Only create admin if one doesn't exist
@@ -32,13 +31,12 @@ func init() {
 
 		// Check if we have admin credentials
 		if email == "" || passwordHash == "" {
-			log.Println("Warning: ADMIN_EMAIL or ADMIN_PASSWORD environment variables not set")
-			log.Println("Skipping admin user creation")
+			log.Fatal("Warning: ADMIN_EMAIL or ADMIN_PASSWORD environment variables not set")
 		} else {
-			err = dbConn.CreateAdminUserAndSettings(email, passwordHash)
+			// Create admin user
+			err = dbConn.CreateUser(email, passwordHash, false, nil, true)
 			if err != nil {
-				log.Println("Failed to create admin user:", err)
-				panic(err)
+				log.Fatal("Failed to create admin user:", err)
 			}
 			log.Println("Admin user created successfully")
 		}
