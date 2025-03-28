@@ -84,8 +84,8 @@ func CreateTables(conn *pgx.Conn) error {
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		);
 		CREATE INDEX IF NOT EXISTS idx_chat_contents_user_id ON chat_contents(user_id);
-		CREATE UNIQUE INDEX idx_chat_contents_public_uuid ON chat_contents(public_uuid) WHERE public_uuid IS NOT NULL;
-		CREATE INDEX idx_chat_contents_is_public ON chat_contents(is_public) WHERE is_public = TRUE;
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_contents_public_uuid ON chat_contents(public_uuid) WHERE public_uuid IS NOT NULL;
+		CREATE INDEX IF NOT EXISTS idx_chat_contents_is_public ON chat_contents(is_public) WHERE is_public = TRUE;
 		CREATE TABLE IF NOT EXISTS admin_settings (
 			version SERIAL PRIMARY KEY,
 			config JSONB NOT NULL,
@@ -389,11 +389,62 @@ func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) er
 	// Create a User object with SSO information
 	user := &user.User{
 		Email:         email,
-		PasswordHash:  "",
+		PasswordHash:  nil,
 		IsSso:         true,
-		SsoUserID:     ssoUserId,
+		SsoUserID:     &ssoUserId,
 		SsoProviderID: &ssoProviderId,
 		IsAdmin:       false,
 	}
 	return d.CreateUser(user)
+}
+
+func (d *DB) GetUser(email string) (*user.User, error) {
+	query := `
+		SELECT email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+		FROM users
+		WHERE email = $1
+	`
+	var u user.User
+	err := d.Conn.QueryRow(context.Background(), query, email).Scan(
+		&u.Email,
+		&u.PasswordHash,
+		&u.IsSso,
+		&u.SsoUserID,
+		&u.SsoProviderID,
+		&u.IsAdmin,
+	)
+	if err != nil {
+		return nil, errors.New("failed to get user: " + err.Error())
+	}
+	return &u, nil
+}
+
+func (d *DB) GetUsers() ([]*user.User, error) {
+	query := `
+		SELECT email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+		FROM users
+	`
+	rows, err := d.Conn.Query(context.Background(), query)
+	if err != nil {
+		return nil, errors.New("failed to get users: " + err.Error())
+	}
+	defer rows.Close()
+
+	var users []*user.User
+	for rows.Next() {
+		u := &user.User{}
+		err := rows.Scan(
+			&u.Email,
+			&u.PasswordHash,
+			&u.IsSso,
+			&u.SsoUserID,
+			&u.SsoProviderID,
+			&u.IsAdmin,
+		)
+		if err != nil {
+			return nil, errors.New("failed to scan user: " + err.Error())
+		}
+		users = append(users, u)
+	}
+	return users, nil
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
 )
 
@@ -19,6 +20,12 @@ func init() {
 		log.Fatal("Failed to initialize database connection:", err)
 	}
 
+	// Initialize encryption
+	err = security.InitEncryption([]byte(os.Getenv("ENCRYPTION_KEY")))
+	if err != nil {
+		log.Fatal("Failed to initialize encryption:", err)
+	}
+
 	// Check if admin user already exists
 	adminExists, err := dbConn.AdminExists()
 	if err != nil {
@@ -28,11 +35,12 @@ func init() {
 	// Only create admin if one doesn't exist
 	if !adminExists {
 		log.Println("No admin user found. Creating admin user...")
-		email, passwordHash := os.Getenv("ADMIN_EMAIL"), os.Getenv("ADMIN_PASSWORD")
+		email := os.Getenv("ADMIN_EMAIL")
+		passwordHash, err := security.HashPassword(os.Getenv("ADMIN_PASSWORD"))
 
 		// Check if we have admin credentials
-		if email == "" || passwordHash == "" {
-			log.Fatal("Warning: ADMIN_EMAIL or ADMIN_PASSWORD environment variables not set")
+		if email == "" || passwordHash == nil || err != nil {
+			log.Fatal("Error: ADMIN_EMAIL or ADMIN_PASSWORD environment variables not set")
 		} else {
 			// Create admin user
 			adminUser := &user.User{
