@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Quillium-AI/Quillium/src/backend/internal/api"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
@@ -61,6 +62,17 @@ func init() {
 }
 
 func main() {
-	log.Println("Backend started")
+	log.Println("Starting backend...")
 	defer dbConn.Close()
+
+	// Get JWT secret from environment or use a default for development
+	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+	if len(jwtSecret) == 0 {
+		log.Println("Warning: Using default JWT secret. Set JWT_SECRET environment variable in production.")
+		jwtSecret = []byte("quillium-dev-secret-key")
+	}
+
+	// Create and start the API server
+	server := api.NewServer(":8080", dbConn, jwtSecret)
+	log.Fatal(server.Start())
 }

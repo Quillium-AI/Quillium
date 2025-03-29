@@ -412,12 +412,13 @@ func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) (*
 
 func (d *DB) GetUser(email string) (*user.User, error) {
 	query := `
-		SELECT email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+		SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
 		FROM users
 		WHERE email = $1
 	`
 	var u user.User
 	err := d.Conn.QueryRow(context.Background(), query, email).Scan(
+		&u.ID,
 		&u.Email,
 		&u.PasswordHash,
 		&u.IsSso,
@@ -433,7 +434,7 @@ func (d *DB) GetUser(email string) (*user.User, error) {
 
 func (d *DB) GetUsers() ([]*user.User, error) {
 	query := `
-		SELECT email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+		SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
 		FROM users
 	`
 	rows, err := d.Conn.Query(context.Background(), query)
@@ -446,6 +447,7 @@ func (d *DB) GetUsers() ([]*user.User, error) {
 	for rows.Next() {
 		u := &user.User{}
 		err := rows.Scan(
+			&u.ID,
 			&u.Email,
 			&u.PasswordHash,
 			&u.IsSso,
