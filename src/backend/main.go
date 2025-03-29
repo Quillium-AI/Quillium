@@ -49,7 +49,7 @@ func init() {
 				IsSso:        false,
 				IsAdmin:      true,
 			}
-			err = dbConn.CreateUser(adminUser)
+			_, err = dbConn.CreateUser(adminUser)
 			if err != nil {
 				log.Fatal("Failed to create admin user:", err)
 			}

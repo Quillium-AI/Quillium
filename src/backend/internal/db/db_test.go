@@ -168,7 +168,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	// Insert the test user
-	err = db.CreateUser(testUser)
+	_, err = db.CreateUser(testUser)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -239,7 +239,7 @@ func TestAdminExists(t *testing.T) {
 	}
 
 	// Insert the admin user
-	err = db.CreateUser(adminUser)
+	_, err = db.CreateUser(adminUser)
 	if err != nil {
 		t.Fatalf("Failed to create admin user: %v", err)
 	}
@@ -281,7 +281,7 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	// Insert the test user
-	err = db.CreateUser(testUser)
+	_, err = db.CreateUser(testUser)
 	if err != nil {
 		t.Fatalf("CreateUser returned error: %v", err)
 	}
@@ -301,7 +301,7 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	// Test creating a duplicate user (should fail)
-	err = db.CreateUser(testUser)
+	_, err = db.CreateUser(testUser)
 	if err == nil {
 		t.Error("Expected error when creating duplicate user, but got nil")
 	}
@@ -333,7 +333,7 @@ func TestUserSettings(t *testing.T) {
 	}
 
 	// Insert the test user
-	err = db.CreateUser(testUser)
+	_, err = db.CreateUser(testUser)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -425,22 +425,22 @@ func TestAdminSettings(t *testing.T) {
 
 	// Verify the settings were created correctly
 	if createdSettings.FirecrawlBaseURL != testSettings.FirecrawlBaseURL {
-		t.Errorf("Expected FirecrawlBaseURL %v, got %v", 
+		t.Errorf("Expected FirecrawlBaseURL %v, got %v",
 			testSettings.FirecrawlBaseURL, createdSettings.FirecrawlBaseURL)
 	}
 
 	if createdSettings.OpenAIBaseURL != testSettings.OpenAIBaseURL {
-		t.Errorf("Expected OpenAIBaseURL %v, got %v", 
+		t.Errorf("Expected OpenAIBaseURL %v, got %v",
 			testSettings.OpenAIBaseURL, createdSettings.OpenAIBaseURL)
 	}
 
 	if createdSettings.LLMProfileSpeed != testSettings.LLMProfileSpeed {
-		t.Errorf("Expected LLMProfileSpeed %v, got %v", 
+		t.Errorf("Expected LLMProfileSpeed %v, got %v",
 			testSettings.LLMProfileSpeed, createdSettings.LLMProfileSpeed)
 	}
 
 	if createdSettings.EnableSignUps != testSettings.EnableSignUps {
-		t.Errorf("Expected EnableSignUps %v, got %v", 
+		t.Errorf("Expected EnableSignUps %v, got %v",
 			testSettings.EnableSignUps, createdSettings.EnableSignUps)
 	}
 
@@ -495,7 +495,7 @@ func TestChatFunctions(t *testing.T) {
 	}
 
 	// Insert the test user
-	err = db.CreateUser(testUser)
+	_, err = db.CreateUser(testUser)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -558,12 +558,12 @@ func TestChatFunctions(t *testing.T) {
 
 	if len(retrievedChat.Messages) > 0 {
 		if retrievedChat.Messages[0].Role != testChat.Messages[0].Role {
-			t.Errorf("Expected first message role %s, got %s", 
+			t.Errorf("Expected first message role %s, got %s",
 				testChat.Messages[0].Role, retrievedChat.Messages[0].Role)
 		}
 
 		if retrievedChat.Messages[0].Content != testChat.Messages[0].Content {
-			t.Errorf("Expected first message content %s, got %s", 
+			t.Errorf("Expected first message content %s, got %s",
 				testChat.Messages[0].Content, retrievedChat.Messages[0].Content)
 		}
 	}
@@ -610,6 +610,265 @@ func TestChatFunctions(t *testing.T) {
 	for _, id := range chatIds {
 		if id == chatId {
 			t.Errorf("Chat with ID %d still exists after deletion", chatId)
+		}
+	}
+}
+
+// TestUserApikeys tests the CreateUserApikey, GetUserByApikey, and DeleteUserApikey functions
+func TestUserApikeys(t *testing.T) {
+	// Skip this test if we don't want to run database tests
+	if !shouldRunDBTests(t) {
+		return
+	}
+
+	// Set up test database
+	db := setupTestDB(t)
+
+	// Create a test user first
+	testEmail := "apikey_user@example.com"
+	testPassword := "password123"
+	hashedPassword, err := security.HashPassword(testPassword)
+	if err != nil {
+		t.Fatalf("Failed to hash password: %v", err)
+	}
+
+	testUser := &user.User{
+		Email:        testEmail,
+		PasswordHash: hashedPassword,
+		IsSso:        false,
+		IsAdmin:      false,
+	}
+
+	// Insert the test user
+	userId, err := db.CreateUser(testUser)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
+	// Update the user with the returned ID
+	testUser.ID = userId
+
+	// Create a test API key (in a real scenario, this would be encrypted)
+	testApiKey := "test_api_key_123"
+
+	// Test CreateUserApikey
+	err = db.CreateUserApikey(testUser, testApiKey)
+	if err != nil {
+		t.Fatalf("CreateUserApikey returned error: %v", err)
+	}
+
+	// Test GetUserByApikey
+	retrievedUserId, err := db.GetUserByApikey(testApiKey)
+	if err != nil {
+		t.Fatalf("GetUserByApikey returned error: %v", err)
+	}
+
+	// Verify the retrieved user ID
+	if retrievedUserId != *testUser.ID {
+		t.Errorf("Expected user ID %d, got %d", *testUser.ID, retrievedUserId)
+	}
+
+	// Test creating multiple API keys for the same user
+	testApiKey2 := "test_api_key_2"
+	err = db.CreateUserApikey(testUser, testApiKey2)
+	if err != nil {
+		t.Fatalf("Failed to create second API key: %v", err)
+	}
+
+	// Verify both API keys can be retrieved
+	retrievedUserId, err = db.GetUserByApikey(testApiKey)
+	if err != nil {
+		t.Fatalf("Failed to get first API key: %v", err)
+	}
+	if retrievedUserId != *testUser.ID {
+		t.Errorf("Expected user ID %d for first API key, got %d", *testUser.ID, retrievedUserId)
+	}
+
+	retrievedUserId, err = db.GetUserByApikey(testApiKey2)
+	if err != nil {
+		t.Fatalf("Failed to get second API key: %v", err)
+	}
+	if retrievedUserId != *testUser.ID {
+		t.Errorf("Expected user ID %d for second API key, got %d", *testUser.ID, retrievedUserId)
+	}
+
+	// Test DeleteUserApikey
+	err = db.DeleteUserApikey(testUser, testApiKey)
+	if err != nil {
+		t.Fatalf("DeleteUserApikey returned error: %v", err)
+	}
+
+	// Verify the first API key was deleted by trying to retrieve it (should fail)
+	_, err = db.GetUserByApikey(testApiKey)
+	if err == nil {
+		t.Error("Expected error when getting deleted API key, but got nil")
+	}
+
+	// The second API key should still be valid
+	retrievedUserId, err = db.GetUserByApikey(testApiKey2)
+	if err != nil {
+		t.Fatalf("Failed to get second API key after deleting first: %v", err)
+	}
+	if retrievedUserId != *testUser.ID {
+		t.Errorf("Expected user ID %d for second API key, got %d", *testUser.ID, retrievedUserId)
+	}
+
+	// Create a second test user
+	testEmail2 := "apikey_user2@example.com"
+	testUser2 := &user.User{
+		Email:        testEmail2,
+		PasswordHash: hashedPassword, // Reuse the same password hash for simplicity
+		IsSso:        false,
+		IsAdmin:      false,
+	}
+
+	// Insert the second test user
+	userId2, err := db.CreateUser(testUser2)
+	if err != nil {
+		t.Fatalf("Failed to create second test user: %v", err)
+	}
+
+	// Update the second user with the returned ID
+	testUser2.ID = userId2
+
+	// Create an API key for the second user
+	testApiKey3 := "test_api_key_3"
+	err = db.CreateUserApikey(testUser2, testApiKey3)
+	if err != nil {
+		t.Fatalf("Failed to create API key for second user: %v", err)
+	}
+
+	// Verify both users' API keys can be retrieved correctly
+	retrievedUserId, err = db.GetUserByApikey(testApiKey2) // First user's remaining key
+	if err != nil {
+		t.Fatalf("Failed to get first user's API key: %v", err)
+	}
+	if retrievedUserId != *testUser.ID {
+		t.Errorf("Expected user ID %d for first user's API key, got %d", *testUser.ID, retrievedUserId)
+	}
+
+	retrievedUserId, err = db.GetUserByApikey(testApiKey3) // Second user's key
+	if err != nil {
+		t.Fatalf("Failed to get second user's API key: %v", err)
+	}
+	if retrievedUserId != *testUser2.ID {
+		t.Errorf("Expected user ID %d for second user's API key, got %d", *testUser2.ID, retrievedUserId)
+	}
+}
+
+// TestGetUserApikeys tests the GetUserApikeys function
+func TestGetUserApikeys(t *testing.T) {
+	// Skip this test if we don't want to run database tests
+	if !shouldRunDBTests(t) {
+		return
+	}
+
+	// Set up test database
+	db := setupTestDB(t)
+
+	// Create a test user
+	testEmail := "apikeys_user@example.com"
+	testPassword := "password123"
+	hashedPassword, err := security.HashPassword(testPassword)
+	if err != nil {
+		t.Fatalf("Failed to hash password: %v", err)
+	}
+
+	testUser := &user.User{
+		Email:        testEmail,
+		PasswordHash: hashedPassword,
+		IsSso:        false,
+		IsAdmin:      false,
+	}
+
+	// Insert the test user
+	userId, err := db.CreateUser(testUser)
+	if err != nil {
+		t.Fatalf("Failed to create test user: %v", err)
+	}
+
+	// Update the user with the returned ID
+	testUser.ID = userId
+
+	// Initially, the user should have no API keys
+	apiKeys, err := db.GetUserApikeys(testUser)
+	if err != nil {
+		t.Fatalf("GetUserApikeys returned error: %v", err)
+	}
+
+	if len(apiKeys) != 0 {
+		t.Errorf("Expected 0 API keys initially, got %d", len(apiKeys))
+	}
+
+	// Create multiple API keys for the user
+	testApiKeys := []string{
+		"test_apikey_get_1",
+		"test_apikey_get_2",
+		"test_apikey_get_3",
+	}
+
+	// Add each API key
+	for _, key := range testApiKeys {
+		err = db.CreateUserApikey(testUser, key)
+		if err != nil {
+			t.Fatalf("Failed to create API key '%s': %v", key, err)
+		}
+	}
+
+	// Now the user should have multiple API keys
+	apiKeys, err = db.GetUserApikeys(testUser)
+	if err != nil {
+		t.Fatalf("GetUserApikeys returned error after creating keys: %v", err)
+	}
+
+	// Verify we have the expected number of keys
+	if len(apiKeys) != len(testApiKeys) {
+		t.Errorf("Expected %d API keys after creation, got %d", len(testApiKeys), len(apiKeys))
+	}
+
+	// Verify all keys are present
+	keyMap := make(map[string]bool)
+	for _, key := range apiKeys {
+		keyMap[key] = true
+	}
+
+	for _, expectedKey := range testApiKeys {
+		if !keyMap[expectedKey] {
+			t.Errorf("Expected API key '%s' not found in results", expectedKey)
+		}
+	}
+
+	// Delete one API key
+	keyToDelete := testApiKeys[1] // Delete the middle key
+	err = db.DeleteUserApikey(testUser, keyToDelete)
+	if err != nil {
+		t.Fatalf("Failed to delete API key: %v", err)
+	}
+
+	// The user should now have one less API key
+	apiKeys, err = db.GetUserApikeys(testUser)
+	if err != nil {
+		t.Fatalf("GetUserApikeys returned error after deletion: %v", err)
+	}
+
+	if len(apiKeys) != len(testApiKeys)-1 {
+		t.Errorf("Expected %d API keys after deletion, got %d", len(testApiKeys)-1, len(apiKeys))
+	}
+
+	// Verify the deleted key is not present
+	keyMap = make(map[string]bool)
+	for _, key := range apiKeys {
+		keyMap[key] = true
+	}
+
+	if keyMap[keyToDelete] {
+		t.Errorf("Deleted API key '%s' still found in results", keyToDelete)
+	}
+
+	// Verify the other keys are still present
+	for i, expectedKey := range testApiKeys {
+		if i != 1 && !keyMap[expectedKey] { // Skip the deleted key (index 1)
+			t.Errorf("Expected API key '%s' not found in results after deletion of another key", expectedKey)
 		}
 	}
 }

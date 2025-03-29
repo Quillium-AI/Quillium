@@ -99,6 +99,14 @@ func CreateTables(conn *pgx.Conn) error {
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		);
 		CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+		CREATE TABLE IF NOT EXISTS user_apikeys (
+			id SERIAL PRIMARY KEY,
+			user_id INT NOT NULL,
+			api_key_encrypt TEXT NOT NULL UNIQUE,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		);
+		CREATE INDEX IF NOT EXISTS idx_user_apikeys_user_id ON user_apikeys(user_id);
 	`
 	_, err := conn.Exec(context.Background(), query)
 	if err != nil {
@@ -107,7 +115,7 @@ func CreateTables(conn *pgx.Conn) error {
 	return nil
 }
 
-func (d *DB) CreateUser(user *user.User) error {
+func (d *DB) CreateUser(user *user.User) (*int, error) {
 	query := `
 		INSERT INTO users (email, password_hash, is_sso, sso_provider_id, is_admin)
 		VALUES ($1, $2, $3, $4, $5)
@@ -120,14 +128,14 @@ func (d *DB) CreateUser(user *user.User) error {
 	var id int
 	err := d.Conn.QueryRow(context.Background(), query, user.Email, user.PasswordHash, user.IsSso, user.SsoProviderID, user.IsAdmin).Scan(&id)
 	if err != nil {
-		return errors.New("failed to create user: " + err.Error())
+		return nil, errors.New("failed to create user: " + err.Error())
 	}
 	_, err = d.Conn.Exec(context.Background(), querySettings, id)
 	if err != nil {
-		return errors.New("failed to create user settings: " + err.Error())
+		return nil, errors.New("failed to create user settings: " + err.Error())
 	}
 	log.Printf("Created user with ID: %d", id)
-	return nil
+	return &id, nil
 }
 
 func (d *DB) CreateSsoProvider(ssoProvider *sso.SsoProvider) error {
@@ -385,7 +393,7 @@ func (d *DB) CreateAdminSettings(config *settings.AdminSettings) error {
 	return nil
 }
 
-func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) error {
+func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) (*int, error) {
 	// Create a User object with SSO information
 	user := &user.User{
 		Email:         email,
@@ -395,7 +403,11 @@ func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) er
 		SsoProviderID: &ssoProviderId,
 		IsAdmin:       false,
 	}
-	return d.CreateUser(user)
+	id, err := d.CreateUser(user)
+	if err != nil {
+		return nil, errors.New("failed to create sso user: " + err.Error())
+	}
+	return id, nil
 }
 
 func (d *DB) GetUser(email string) (*user.User, error) {
@@ -447,4 +459,66 @@ func (d *DB) GetUsers() ([]*user.User, error) {
 		users = append(users, u)
 	}
 	return users, nil
+}
+
+func (d *DB) CreateUserApikey(user *user.User, apikey string) error {
+	query := `
+		INSERT INTO user_apikeys (user_id, api_key_encrypt)
+		VALUES ($1, $2)
+	`
+	_, err := d.Conn.Exec(context.Background(), query, user.ID, apikey)
+	if err != nil {
+		return errors.New("failed to create user apikey: " + err.Error())
+	}
+	return nil
+}
+
+func (d *DB) GetUserByApikey(apikey_encrypt string) (int, error) {
+	query := `
+		SELECT user_id
+		FROM user_apikeys
+		WHERE api_key_encrypt = $1
+	`
+	var apikey int
+	err := d.Conn.QueryRow(context.Background(), query, apikey_encrypt).Scan(&apikey)
+	if err != nil {
+		return -1, errors.New("failed to get user apikey: " + err.Error())
+	}
+	return apikey, nil
+}
+
+func (d *DB) GetUserApikeys(user *user.User) ([]string, error) {
+	query := `
+		SELECT api_key_encrypt
+		FROM user_apikeys
+		WHERE user_id = $1
+	`
+	var apikeys []string
+	rows, err := d.Conn.Query(context.Background(), query, user.ID)
+	if err != nil {
+		return nil, errors.New("failed to get user apikeys: " + err.Error())
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var apikey string
+		err := rows.Scan(&apikey)
+		if err != nil {
+			return nil, errors.New("failed to scan user apikey: " + err.Error())
+		}
+		apikeys = append(apikeys, apikey)
+	}
+	return apikeys, nil
+}
+
+func (d *DB) DeleteUserApikey(user *user.User, apikey_encrypt string) error {
+	query := `
+		DELETE FROM user_apikeys
+		WHERE user_id = $1 AND api_key_encrypt = $2
+	`
+	_, err := d.Conn.Exec(context.Background(), query, user.ID, apikey_encrypt)
+	if err != nil {
+		return errors.New("failed to delete user apikey: " + err.Error())
+	}
+	return nil
 }
