@@ -36,6 +36,7 @@ func SetupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/healthz", withMiddleware(healthCheckHandler, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/version", withMiddleware(versionHandler, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/auth/login", withMiddleware(handlers.Login, middleware.AuthTypeNone))
+	mux.HandleFunc("/api/auth/signup", withMiddleware(handlers.Signup, middleware.AuthTypeNone))
 	
 	// Frontend-only endpoints (JWT auth required)
 	mux.HandleFunc("/api/auth/logout", withMiddleware(handlers.Logout, middleware.AuthTypeFrontend))

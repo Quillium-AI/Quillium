@@ -116,8 +116,10 @@ func validateAPIKey(apiKey string) (bool, string) {
 		return false, ""
 	}
 
-	// Get the user ID associated with this API key
-	// First we need to encrypt the API key to match how it's stored
+	// The issue is that we can't directly compare encrypted API keys because the encryption is non-deterministic
+	// (it uses a random salt). Instead, we need to decrypt the stored API key and compare with the provided one.
+	// However, we need to know which API key to decrypt first.
+	// Let's try a different approach - encrypt the incoming API key and use it to query the database
 	encryptedKey, err := security.EncryptPassword(apiKey)
 	if err != nil {
 		return false, ""
@@ -125,12 +127,62 @@ func validateAPIKey(apiKey string) (bool, string) {
 
 	// Try to find a user with this API key
 	userID, err := dbConn.GetUserByApikey(*encryptedKey)
+	if err == nil {
+		// We found a match, return the user ID
+		return true, strconv.Itoa(userID)
+	}
+
+	// If we didn't find a match, let's try a different approach
+	// Get all users
+	users, err := dbConn.GetUsers()
 	if err != nil {
 		return false, ""
 	}
 
-	// Return the user ID as a string
-	return true, strconv.Itoa(userID)
+	// For each user, get their API keys and check if any match
+	for _, u := range users {
+		apiKeys, err := dbConn.GetUserApikeys(u)
+		if err != nil {
+			continue
+		}
+
+		for _, encryptedAPIKey := range apiKeys {
+			// Decrypt the stored API key
+			decryptedKey, err := security.DecryptPassword(encryptedAPIKey)
+			if err != nil || decryptedKey == nil {
+				continue
+			}
+
+			// Compare with the provided API key
+			if *decryptedKey == apiKey {
+				// We found a match
+				return true, strconv.Itoa(*u.ID)
+			}
+		}
+	}
+
+	return false, ""
+}
+
+// GenerateToken generates a JWT token for the given user ID
+func GenerateToken(userID string, isAdmin bool, expiration time.Duration) (string, error) {
+	expirationTime := time.Now().Add(expiration)
+	claims := &Claims{
+		UserID:  userID,
+		IsAdmin: isAdmin,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }
 
 // GenerateJWT creates a new JWT token for a user
