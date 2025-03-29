@@ -28,7 +28,7 @@ func IsAPIClientKey() contextKey {
 }
 
 // AddUserToContext adds user information to the request context
-func AddUserToContext(ctx context.Context, userID string, isAdmin bool, isAPIClient bool) context.Context {
+func AddUserToContext(ctx context.Context, userID int, isAdmin bool, isAPIClient bool) context.Context {
 	ctx = context.WithValue(ctx, userIDKey, userID)
 	ctx = context.WithValue(ctx, isAdminKey, isAdmin)
 	ctx = context.WithValue(ctx, isAPIClientKey, isAPIClient)
@@ -36,8 +36,8 @@ func AddUserToContext(ctx context.Context, userID string, isAdmin bool, isAPICli
 }
 
 // GetUserID retrieves the user ID from the context
-func GetUserID(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value(userIDKey).(string)
+func GetUserID(ctx context.Context) (int, bool) {
+	userID, ok := ctx.Value(userIDKey).(int)
 	return userID, ok
 }
 

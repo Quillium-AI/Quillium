@@ -3,12 +3,11 @@ package middleware
 import (
 	"net/http"
 	"strings"
-	"strconv"
 	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var jwtSecret []byte
@@ -36,8 +35,8 @@ const (
 
 // Claims represents the JWT claims
 type Claims struct {
-	UserID   string `json:"user_id"`
-	IsAdmin  bool   `json:"is_admin"`
+	UserID  int  `json:"user_id"`
+	IsAdmin bool `json:"is_admin"`
 	jwt.RegisteredClaims
 }
 
@@ -106,14 +105,14 @@ func WithAuth(authType AuthType, next http.HandlerFunc) http.HandlerFunc {
 		// Authentication failed
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error":"Unauthorized"}`)) 
+		w.Write([]byte(`{"error":"Unauthorized"}`))
 	}
 }
 
 // validateAPIKey checks if the API key is valid and returns the associated user ID
-func validateAPIKey(apiKey string) (bool, string) {
+func validateAPIKey(apiKey string) (bool, int) {
 	if dbConn == nil || apiKey == "" {
-		return false, ""
+		return false, -1
 	}
 
 	// The issue is that we can't directly compare encrypted API keys because the encryption is non-deterministic
@@ -122,21 +121,21 @@ func validateAPIKey(apiKey string) (bool, string) {
 	// Let's try a different approach - encrypt the incoming API key and use it to query the database
 	encryptedKey, err := security.EncryptPassword(apiKey)
 	if err != nil {
-		return false, ""
+		return false, -1
 	}
 
 	// Try to find a user with this API key
 	userID, err := dbConn.GetUserByApikey(*encryptedKey)
 	if err == nil {
 		// We found a match, return the user ID
-		return true, strconv.Itoa(userID)
+		return true, userID
 	}
 
 	// If we didn't find a match, let's try a different approach
 	// Get all users
 	users, err := dbConn.GetUsers()
 	if err != nil {
-		return false, ""
+		return false, -1
 	}
 
 	// For each user, get their API keys and check if any match
@@ -156,16 +155,16 @@ func validateAPIKey(apiKey string) (bool, string) {
 			// Compare with the provided API key
 			if *decryptedKey == apiKey {
 				// We found a match
-				return true, strconv.Itoa(*u.ID)
+				return true, *u.ID
 			}
 		}
 	}
 
-	return false, ""
+	return false, -1
 }
 
 // GenerateToken generates a JWT token for the given user ID
-func GenerateToken(userID string, isAdmin bool, expiration time.Duration) (string, error) {
+func GenerateToken(userID int, isAdmin bool, expiration time.Duration) (string, error) {
 	expirationTime := time.Now().Add(expiration)
 	claims := &Claims{
 		UserID:  userID,
@@ -186,7 +185,7 @@ func GenerateToken(userID string, isAdmin bool, expiration time.Duration) (strin
 }
 
 // GenerateJWT creates a new JWT token for a user
-func GenerateJWT(userID string, isAdmin bool) (string, error) {
+func GenerateJWT(userID int, isAdmin bool) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
 		UserID:  userID,

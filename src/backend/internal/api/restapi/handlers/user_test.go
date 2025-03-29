@@ -21,11 +21,11 @@ func TestGetCurrentUser(t *testing.T) {
 	if !testutils.ShouldRunTests(t) {
 		return
 	}
-	
+
 	// Setup test DB
 	testDB := testutils.SetupTestDB(t)
 	defer testDB.Close()
-	
+
 	// Initialize handlers with the test DB
 	InitHandlers(testDB)
 
@@ -34,21 +34,21 @@ func TestGetCurrentUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to hash password: %v", err)
 	}
-	
+
 	testUser1 := &user.User{
 		Email:        "user1@example.com",
 		PasswordHash: hashedPassword,
 		IsAdmin:      false,
 		IsSso:        false,
 	}
-	
+
 	testUser2 := &user.User{
 		Email:        "user2@example.com",
 		PasswordHash: hashedPassword, // Using the same hash for simplicity
 		IsAdmin:      true,
 		IsSso:        false,
 	}
-	
+
 	// Insert the test users
 	userID1, err := testDB.CreateUser(testUser1)
 	if err != nil {
@@ -58,7 +58,7 @@ func TestGetCurrentUser(t *testing.T) {
 		t.Fatalf("Expected non-nil user ID from CreateUser for user 1")
 	}
 	testUser1.ID = userID1
-	
+
 	userID2, err := testDB.CreateUser(testUser2)
 	if err != nil {
 		t.Fatalf("Failed to create test user 2: %v", err)
@@ -67,7 +67,7 @@ func TestGetCurrentUser(t *testing.T) {
 		t.Fatalf("Expected non-nil user ID from CreateUser for user 2")
 	}
 	testUser2.ID = userID2
-	
+
 	// Debug: Print all users in the database
 	users, err := testDB.GetUsers()
 	if err != nil {
@@ -82,7 +82,7 @@ func TestGetCurrentUser(t *testing.T) {
 			}
 		}
 	}
-	
+
 	tests := []struct {
 		name            string
 		userID          string
@@ -94,7 +94,7 @@ func TestGetCurrentUser(t *testing.T) {
 			userID: strconv.Itoa(*userID1),
 			expectedStatus: http.StatusOK,
 			expectedResponse: UserResponse{
-				ID:      strconv.Itoa(*userID1),
+				ID:      *userID1,
 				Email:   testUser1.Email,
 				IsAdmin: testUser1.IsAdmin,
 				IsSso:   testUser1.IsSso,
@@ -117,26 +117,26 @@ func TestGetCurrentUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create request: %v", err)
 			}
-			
+
 			// Create a new response recorder
 			rec := httptest.NewRecorder()
-			
+
 			// Create a context with the user ID
 			ctx := context.Background()
 			ctx = context.WithValue(ctx, middleware.UserIDKey(), tc.userID)
 			ctx = context.WithValue(ctx, middleware.IsAdminKey(), tc.userID == strconv.Itoa(*userID2))
-			
+
 			// Set the context on the request
 			req = req.WithContext(ctx)
-			
+
 			// Call the handler
 			GetCurrentUser(rec, req)
-			
+
 			// Check the status code
 			if rec.Code != tc.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rec.Code)
 			}
-			
+
 			// Check the response body
 			if tc.expectedStatus == http.StatusOK {
 				var response UserResponse
@@ -144,16 +144,16 @@ func TestGetCurrentUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to unmarshal response: %v", err)
 				}
-				
+
 				expected := tc.expectedResponse.(UserResponse)
-				
+
 				// Log the actual response for debugging
 				t.Logf("Expected response: %+v", expected)
 				t.Logf("Actual response: %+v", response)
-				
-				if response.ID != expected.ID || 
-				   response.Email != expected.Email || 
-				   response.IsAdmin != expected.IsAdmin || 
+
+				if response.ID != expected.ID ||
+				   response.Email != expected.Email ||
+				   response.IsAdmin != expected.IsAdmin ||
 				   response.IsSso != expected.IsSso {
 					t.Errorf("Response mismatch. Expected %+v, got %+v", expected, response)
 				}
@@ -163,7 +163,7 @@ func TestGetCurrentUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to unmarshal response: %v", err)
 				}
-				
+
 				expected := tc.expectedResponse.(map[string]string)
 				if response["error"] != expected["error"] {
 					t.Errorf("Expected error %q, got %q", expected["error"], response["error"])
@@ -178,14 +178,14 @@ func TestCreateUser(t *testing.T) {
 	if !testutils.ShouldRunTests(t) {
 		return
 	}
-	
+
 	// Setup test DB
 	testDB := testutils.SetupTestDB(t)
 	defer testDB.Close()
-	
+
 	// Initialize handlers with the test DB
 	InitHandlers(testDB)
-	
+
 	// Setup middleware with a test secret
 	testSecret := []byte("test-secret-key")
 	middleware.InitAuth(testSecret, testDB)
@@ -195,21 +195,21 @@ func TestCreateUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to hash password: %v", err)
 	}
-	
+
 	adminUser := &user.User{
 		Email:        "admin@example.com",
 		PasswordHash: hashedPassword,
 		IsAdmin:      true,
 		IsSso:        false,
 	}
-	
+
 	regularUser := &user.User{
 		Email:        "regular@example.com",
 		PasswordHash: hashedPassword,
 		IsAdmin:      false,
 		IsSso:        false,
 	}
-	
+
 	// Insert the test users
 	adminID, err := testDB.CreateUser(adminUser)
 	if err != nil {
@@ -219,7 +219,7 @@ func TestCreateUser(t *testing.T) {
 		t.Fatalf("Expected non-nil user ID from CreateUser for admin user")
 	}
 	adminUser.ID = adminID
-	
+
 	regularID, err := testDB.CreateUser(regularUser)
 	if err != nil {
 		t.Fatalf("Failed to create regular user: %v", err)
@@ -282,27 +282,27 @@ func TestCreateUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to marshal request body: %v", err)
 			}
-			
+
 			// Create request
 			req := httptest.NewRequest("POST", "/api/users", bytes.NewBuffer(reqBody))
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			// Add user ID and admin status to context
 			ctx := context.WithValue(context.Background(), middleware.UserIDKey(), tc.userID)
 			ctx = context.WithValue(ctx, middleware.IsAdminKey(), tc.isAdmin)
 			req = req.WithContext(ctx)
-			
+
 			// Create response recorder
 			rec := httptest.NewRecorder()
-			
+
 			// Call the handler
 			CreateUser(rec, req)
-			
+
 			// Check the status code
 			if rec.Code != tc.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rec.Code)
 			}
-			
+
 			// Check the response body
 			var response map[string]interface{}
 			err = json.Unmarshal(rec.Body.Bytes(), &response)
@@ -314,7 +314,7 @@ func TestCreateUser(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to unmarshal response as bool: %v", err)
 				}
-				
+
 				// If we got a boolean response, just check if it's true for success cases
 				if tc.expectedStatus == http.StatusOK || tc.expectedStatus == http.StatusCreated {
 					if !boolResponse {
@@ -323,7 +323,7 @@ func TestCreateUser(t *testing.T) {
 					return
 				}
 			}
-			
+
 			// Check for expected message or error
 			if tc.expectedStatus == http.StatusOK || tc.expectedStatus == http.StatusCreated {
 				// For success cases, check for message
@@ -340,9 +340,9 @@ func TestCreateUser(t *testing.T) {
 					}
 				}
 			}
-			
+
 			// For successful user creation, verify the user exists in the database
-			if (tc.expectedStatus == http.StatusOK || tc.expectedStatus == http.StatusCreated) && 
+			if (tc.expectedStatus == http.StatusOK || tc.expectedStatus == http.StatusCreated) &&
 			   (tc.name == "Valid Create User (Admin)" || tc.name == "Valid Create Regular User") {
 				// Give the database a moment to complete the operation
 				createdUser, err := testDB.GetUser(tc.requestBody.Email)
@@ -350,7 +350,7 @@ func TestCreateUser(t *testing.T) {
 					t.Logf("Note: Could not retrieve created user: %v", err)
 					return
 				}
-				
+
 				if createdUser == nil {
 					t.Logf("Note: Created user not found in database")
 				} else if createdUser.IsAdmin != tc.requestBody.IsAdmin {
@@ -366,11 +366,11 @@ func TestListUsers(t *testing.T) {
 	if !testutils.ShouldRunTests(t) {
 		return
 	}
-	
+
 	// Setup test DB
 	testDB := testutils.SetupTestDB(t)
 	defer testDB.Close()
-	
+
 	// Initialize handlers with the test DB
 	InitHandlers(testDB)
 
@@ -379,21 +379,21 @@ func TestListUsers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to hash password: %v", err)
 	}
-	
+
 	testUser1 := &user.User{
 		Email:        "listuser1@example.com",
 		PasswordHash: hashedPassword,
 		IsAdmin:      false,
 		IsSso:        false,
 	}
-	
+
 	testUser2 := &user.User{
 		Email:        "listuser2@example.com",
 		PasswordHash: hashedPassword, // Using the same hash for simplicity
 		IsAdmin:      true,
 		IsSso:        false,
 	}
-	
+
 	// Insert the test users
 	userID1, err := testDB.CreateUser(testUser1)
 	if err != nil {
@@ -403,7 +403,7 @@ func TestListUsers(t *testing.T) {
 		t.Fatalf("Expected non-nil user ID from CreateUser for user 1")
 	}
 	testUser1.ID = userID1
-	
+
 	userID2, err := testDB.CreateUser(testUser2)
 	if err != nil {
 		t.Fatalf("Failed to create test user 2: %v", err)
@@ -412,7 +412,7 @@ func TestListUsers(t *testing.T) {
 		t.Fatalf("Expected non-nil user ID from CreateUser for user 2")
 	}
 	testUser2.ID = userID2
-	
+
 	// Debug: Print all users in the database
 	users, err := testDB.GetUsers()
 	if err != nil {
@@ -427,7 +427,7 @@ func TestListUsers(t *testing.T) {
 			}
 		}
 	}
-	
+
 	tests := []struct {
 		name            string
 		userID          string
@@ -458,26 +458,26 @@ func TestListUsers(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create request: %v", err)
 			}
-			
+
 			// Create a new response recorder
 			rec := httptest.NewRecorder()
-			
+
 			// Create a context with the user ID and admin status
 			ctx := context.Background()
 			ctx = context.WithValue(ctx, middleware.UserIDKey(), tc.userID)
 			ctx = context.WithValue(ctx, middleware.IsAdminKey(), tc.isAdmin)
-			
+
 			// Set the context on the request
 			req = req.WithContext(ctx)
-			
+
 			// Call the handler
 			ListUsers(rec, req)
-			
+
 			// Check the status code
 			if rec.Code != tc.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rec.Code)
 			}
-			
+
 			// Check the response body
 			if tc.expectedStatus == http.StatusOK {
 				var response []UserResponse
@@ -485,18 +485,18 @@ func TestListUsers(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to unmarshal response: %v", err)
 				}
-				
+
 				// Log the response for debugging
 				t.Logf("Response: %+v", response)
-				
+
 				// Check that the response contains at least our test users
 				// Note: The database might contain other users from previous tests
-				user1ID := strconv.Itoa(*testUser1.ID)
-				user2ID := strconv.Itoa(*testUser2.ID)
-				
+				user1ID := *testUser1.ID
+				user2ID := *testUser2.ID
+
 				user1Found := false
 				user2Found := false
-				
+
 				for _, u := range response {
 					if u.ID == user1ID && u.Email == testUser1.Email {
 						user1Found = true
@@ -505,14 +505,14 @@ func TestListUsers(t *testing.T) {
 						user2Found = true
 					}
 				}
-				
+
 				// Only check for the users if we're expecting them to be found
 				if tc.name == "Admin Can List Users" {
 					if !user1Found {
-						t.Errorf("Test user 1 (ID: %s, Email: %s) not found in response", user1ID, testUser1.Email)
+						t.Errorf("Test user 1 (ID: %d, Email: %s) not found in response", user1ID, testUser1.Email)
 					}
 					if !user2Found {
-						t.Errorf("Test user 2 (ID: %s, Email: %s) not found in response", user2ID, testUser2.Email)
+						t.Errorf("Test user 2 (ID: %d, Email: %s) not found in response", user2ID, testUser2.Email)
 					}
 				}
 			} else {
@@ -522,7 +522,7 @@ func TestListUsers(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to unmarshal response: %v", err)
 				}
-				
+
 				if response["error"] != "Admin access required" {
 					t.Errorf("Expected error message %q, got %q", "Admin access required", response["error"])
 				}
@@ -536,11 +536,11 @@ func TestGetSsoUser(t *testing.T) {
 	if !testutils.ShouldRunTests(t) {
 		return
 	}
-	
+
 	// Setup test DB
 	testDB := testutils.SetupTestDB(t)
 	defer testDB.Close()
-	
+
 	// Initialize handlers with the test DB
 	InitHandlers(testDB)
 
@@ -552,23 +552,23 @@ func TestGetSsoUser(t *testing.T) {
 		RedirectURL:  "http://localhost:3000/callback",
 		AuthType:     "OAuth2",
 	}
-	
+
 	err := testDB.CreateSsoProvider(ssoProvider)
 	if err != nil {
 		t.Fatalf("Failed to create SSO provider: %v", err)
 	}
-	
+
 	// Get the SSO provider ID directly from the database
 	var ssoProviderID int
 	err = testDB.QueryRow(context.Background(), "SELECT id FROM sso_logins WHERE sso_provider = $1", ssoProvider.Provider).Scan(&ssoProviderID)
 	if err != nil {
 		t.Fatalf("Failed to get SSO provider ID: %v", err)
 	}
-	
+
 	t.Logf("Created SSO provider with ID: %d", ssoProviderID)
-	
+
 	ssoUserID := "sso-user-123"
-	
+
 	// Create an SSO user directly using SQL to bypass any issues with the CreateSsoUser function
 	var userID int
 	err = testDB.QueryRow(
@@ -581,7 +581,7 @@ func TestGetSsoUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create SSO user directly: %v", err)
 	}
-	
+
 	// Also create user settings for this user
 	_, err = testDB.Exec(
 		context.Background(),
@@ -591,74 +591,74 @@ func TestGetSsoUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create user settings: %v", err)
 	}
-	
+
 	t.Logf("Created SSO user with ID: %d", userID)
-	
+
 	// Get the user to verify it was created correctly
 	ssoUser, err := testDB.GetUser("ssouser@example.com")
 	if err != nil {
 		t.Fatalf("Failed to retrieve SSO user: %v", err)
 	}
-	
+
 	// Verify SSO user properties
 	if !ssoUser.IsSso {
 		t.Error("Expected IsSso to be true for SSO user")
 	}
-	
+
 	if ssoUser.SsoUserID == nil || *ssoUser.SsoUserID != ssoUserID {
 		t.Errorf("Expected SsoUserID to be %q, got %v", ssoUserID, ssoUser.SsoUserID)
 	}
-	
+
 	if ssoUser.SsoProviderID == nil || *ssoUser.SsoProviderID != ssoProviderID {
 		t.Errorf("Expected SsoProviderID to be %d, got %v", ssoProviderID, ssoUser.SsoProviderID)
 	}
-	
+
 	// Test getting the SSO user through the API
 	req, err := http.NewRequest(http.MethodGet, "/api/user", nil)
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
 	}
-	
+
 	// Create a new response recorder
 	rec := httptest.NewRecorder()
-	
+
 	// Create a context with the user ID
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, middleware.UserIDKey(), strconv.Itoa(userID))
-	
+
 	// Set the context on the request
 	req = req.WithContext(ctx)
-	
+
 	// Call the handler
 	GetCurrentUser(rec, req)
-	
+
 	// Check the status code
 	if rec.Code != http.StatusOK {
 		t.Errorf("Expected status %d, got %d", http.StatusOK, rec.Code)
 	}
-	
+
 	// Check the response body
 	var response UserResponse
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
-	
+
 	// Verify the response
 	expected := UserResponse{
-		ID:      strconv.Itoa(userID),
+		ID:      userID,
 		Email:   "ssouser@example.com",
 		IsAdmin: false,
 		IsSso:   true,
 	}
-	
+
 	// Log the actual response for debugging
 	t.Logf("Expected response: %+v", expected)
 	t.Logf("Actual response: %+v", response)
-	
-	if response.ID != expected.ID || 
-	   response.Email != expected.Email || 
-	   response.IsAdmin != expected.IsAdmin || 
+
+	if response.ID != expected.ID ||
+	   response.Email != expected.Email ||
+	   response.IsAdmin != expected.IsAdmin ||
 	   response.IsSso != expected.IsSso {
 		t.Errorf("Response mismatch. Expected %+v, got %+v", expected, response)
 	}

@@ -14,6 +14,7 @@ services:
       - ADMIN_EMAIL=quillium@quillium.dev
       - ADMIN_PASSWORD=quillium_password
       - ENCRYPTION_KEY=thisisaverylongkeythatwecanuseen # Used for encryption and decryption MUST BE 32 CHARACTERS LONG!!
+      - JWT_SECRET=quillium-dev-secret-key
     depends_on:
       - postgres
 

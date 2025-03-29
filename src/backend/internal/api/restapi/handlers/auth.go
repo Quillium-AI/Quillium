@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
@@ -28,7 +27,7 @@ type LoginRequest struct {
 // LoginResponse represents a login response
 type LoginResponse struct {
 	Token   string `json:"token"`
-	UserID  string `json:"user_id"`
+	UserID  int    `json:"user_id"`
 	IsAdmin bool   `json:"is_admin"`
 }
 
@@ -73,12 +72,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT token
-	userIDStr := "0"
-	if userData.ID != nil {
-		userIDStr = strconv.Itoa(*userData.ID)
-	}
-	
-	token, err := middleware.GenerateJWT(userIDStr, userData.IsAdmin)
+	token, err := middleware.GenerateJWT(*userData.ID, userData.IsAdmin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to generate token"})
@@ -100,7 +94,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(LoginResponse{
 		Token:   token,
-		UserID:  userIDStr,
+		UserID:  *userData.ID,
 		IsAdmin: userData.IsAdmin,
 	})
 }
@@ -129,18 +123,10 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get user ID from context (set by auth middleware)
-	userIDStr, ok := middleware.GetUserID(r.Context())
+	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
-		return
-	}
-
-	// Convert string ID to int
-	userID, err := strconv.Atoi(userIDStr)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
 		return
 	}
 
@@ -235,7 +221,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT token
-	token, err := middleware.GenerateToken(strconv.Itoa(*userID), false, time.Hour*24)
+	token, err := middleware.GenerateToken(*userID, false, time.Hour*24)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to generate token"})
@@ -246,7 +232,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(LoginResponse{
 		Token:   token,
-		UserID:  strconv.Itoa(*userID),
+		UserID:  *userID,
 		IsAdmin: false,
 	})
 }

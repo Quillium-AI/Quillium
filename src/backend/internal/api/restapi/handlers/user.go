@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
@@ -12,7 +11,7 @@ import (
 
 // UserResponse represents a user response with sensitive fields removed
 type UserResponse struct {
-	ID      string `json:"id"`
+	ID      int `json:"id"`
 	Email   string `json:"email"`
 	IsAdmin bool   `json:"is_admin"`
 	IsSso   bool   `json:"is_sso"`
@@ -28,18 +27,10 @@ type CreateUserRequest struct {
 // GetCurrentUser returns the current authenticated user's information
 func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context (set by auth middleware)
-	userIDStr, ok := middleware.GetUserID(r.Context())
+	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
-		return
-	}
-
-	// Convert string ID to int
-	userID, err := strconv.Atoi(userIDStr)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
 		return
 	}
 
@@ -70,7 +61,7 @@ func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	// Return user data without sensitive fields
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(UserResponse{
-		ID:      strconv.Itoa(*userData.ID),
+		ID:      *userData.ID,
 		Email:   userData.Email,
 		IsAdmin: userData.IsAdmin,
 		IsSso:   userData.IsSso,
@@ -126,7 +117,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	newUser.ID = userID
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(UserResponse{
-		ID:      strconv.Itoa(*newUser.ID),
+		ID:      *newUser.ID,
 		Email:   newUser.Email,
 		IsAdmin: newUser.IsAdmin,
 		IsSso:   newUser.IsSso,
@@ -155,7 +146,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	for _, u := range users {
 		if u.ID != nil {
 			userResponses = append(userResponses, UserResponse{
-				ID:      strconv.Itoa(*u.ID),
+				ID:      *u.ID,
 				Email:   u.Email,
 				IsAdmin: u.IsAdmin,
 				IsSso:   u.IsSso,
