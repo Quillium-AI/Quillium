@@ -11,9 +11,9 @@ import (
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/handlers/testutils"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/sso"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
 )
 
 func TestGetCurrentUser(t *testing.T) {
@@ -84,14 +84,14 @@ func TestGetCurrentUser(t *testing.T) {
 	}
 
 	tests := []struct {
-		name            string
-		userID          string
-		expectedStatus  int
+		name             string
+		userID           string
+		expectedStatus   int
 		expectedResponse interface{}
 	}{
 		{
-			name:   "Valid User",
-			userID: strconv.Itoa(*userID1),
+			name:           "Valid User",
+			userID:         strconv.Itoa(*userID1),
 			expectedStatus: http.StatusOK,
 			expectedResponse: UserResponse{
 				ID:      *userID1,
@@ -101,8 +101,8 @@ func TestGetCurrentUser(t *testing.T) {
 			},
 		},
 		{
-			name:   "User Not Found",
-			userID: "999",
+			name:           "User Not Found",
+			userID:         "999",
 			expectedStatus: http.StatusNotFound,
 			expectedResponse: map[string]string{
 				"error": "User not found",
@@ -152,9 +152,9 @@ func TestGetCurrentUser(t *testing.T) {
 				t.Logf("Actual response: %+v", response)
 
 				if response.ID != expected.ID ||
-				   response.Email != expected.Email ||
-				   response.IsAdmin != expected.IsAdmin ||
-				   response.IsSso != expected.IsSso {
+					response.Email != expected.Email ||
+					response.IsAdmin != expected.IsAdmin ||
+					response.IsSso != expected.IsSso {
 					t.Errorf("Response mismatch. Expected %+v, got %+v", expected, response)
 				}
 			} else {
@@ -232,8 +232,8 @@ func TestCreateUser(t *testing.T) {
 	tests := []struct {
 		name            string
 		requestBody     CreateUserRequest
-		userID          string  // ID of the user making the request
-		isAdmin         bool    // Whether the user is an admin
+		userID          string // ID of the user making the request
+		isAdmin         bool   // Whether the user is an admin
 		expectedStatus  int
 		expectedMessage string
 	}{
@@ -244,9 +244,9 @@ func TestCreateUser(t *testing.T) {
 				Password: "password123",
 				IsAdmin:  true,
 			},
-			userID:  strconv.Itoa(*adminUser.ID),
-			isAdmin: true,
-			expectedStatus: http.StatusOK, // The actual status might be OK instead of Created
+			userID:          strconv.Itoa(*adminUser.ID),
+			isAdmin:         true,
+			expectedStatus:  http.StatusOK, // The actual status might be OK instead of Created
 			expectedMessage: "User created successfully",
 		},
 		{
@@ -256,9 +256,9 @@ func TestCreateUser(t *testing.T) {
 				Password: "password123",
 				IsAdmin:  true,
 			},
-			userID:  strconv.Itoa(*regularUser.ID),
-			isAdmin: false,
-			expectedStatus: http.StatusForbidden,
+			userID:          strconv.Itoa(*regularUser.ID),
+			isAdmin:         false,
+			expectedStatus:  http.StatusForbidden,
 			expectedMessage: "Admin access required", // The actual error message might be different
 		},
 		{
@@ -268,9 +268,9 @@ func TestCreateUser(t *testing.T) {
 				Password: "password123",
 				IsAdmin:  false,
 			},
-			userID:  strconv.Itoa(*regularUser.ID),
-			isAdmin: false,
-			expectedStatus: http.StatusForbidden, // Non-admins might not be allowed to create users
+			userID:          strconv.Itoa(*regularUser.ID),
+			isAdmin:         false,
+			expectedStatus:  http.StatusForbidden, // Non-admins might not be allowed to create users
 			expectedMessage: "Admin access required",
 		},
 	}
@@ -343,9 +343,9 @@ func TestCreateUser(t *testing.T) {
 
 			// For successful user creation, verify the user exists in the database
 			if (tc.expectedStatus == http.StatusOK || tc.expectedStatus == http.StatusCreated) &&
-			   (tc.name == "Valid Create User (Admin)" || tc.name == "Valid Create Regular User") {
+				(tc.name == "Valid Create User (Admin)" || tc.name == "Valid Create Regular User") {
 				// Give the database a moment to complete the operation
-				createdUser, err := testDB.GetUser(tc.requestBody.Email)
+				createdUser, err := testDB.GetUser(&tc.requestBody.Email, nil)
 				if err != nil {
 					t.Logf("Note: Could not retrieve created user: %v", err)
 					return
@@ -429,24 +429,24 @@ func TestListUsers(t *testing.T) {
 	}
 
 	tests := []struct {
-		name            string
-		userID          string
-		isAdmin         bool
-		expectedStatus  int
-		expectedUsers   []UserResponse
+		name           string
+		userID         string
+		isAdmin        bool
+		expectedStatus int
+		expectedUsers  []UserResponse
 	}{
 		{
-			name:    "Admin Can List Users",
-			userID:  strconv.Itoa(*testUser2.ID),
-			isAdmin: true,
+			name:           "Admin Can List Users",
+			userID:         strconv.Itoa(*testUser2.ID),
+			isAdmin:        true,
 			expectedStatus: http.StatusOK,
 			// We expect at least our two test users, but there might be more from other tests
 			// So we'll check for the presence of our test users in the response
 		},
 		{
-			name:    "Non-Admin Cannot List Users",
-			userID:  strconv.Itoa(*testUser1.ID),
-			isAdmin: false,
+			name:           "Non-Admin Cannot List Users",
+			userID:         strconv.Itoa(*testUser1.ID),
+			isAdmin:        false,
 			expectedStatus: http.StatusForbidden,
 		},
 	}
@@ -595,7 +595,8 @@ func TestGetSsoUser(t *testing.T) {
 	t.Logf("Created SSO user with ID: %d", userID)
 
 	// Get the user to verify it was created correctly
-	ssoUser, err := testDB.GetUser("ssouser@example.com")
+	email := "ssouser@example.com"
+	ssoUser, err := testDB.GetUser(&email, nil)
 	if err != nil {
 		t.Fatalf("Failed to retrieve SSO user: %v", err)
 	}
@@ -657,9 +658,9 @@ func TestGetSsoUser(t *testing.T) {
 	t.Logf("Actual response: %+v", response)
 
 	if response.ID != expected.ID ||
-	   response.Email != expected.Email ||
-	   response.IsAdmin != expected.IsAdmin ||
-	   response.IsSso != expected.IsSso {
+		response.Email != expected.Email ||
+		response.IsAdmin != expected.IsAdmin ||
+		response.IsSso != expected.IsSso {
 		t.Errorf("Response mismatch. Expected %+v, got %+v", expected, response)
 	}
 }

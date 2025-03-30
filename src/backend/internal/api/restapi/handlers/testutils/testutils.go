@@ -15,13 +15,13 @@ func ShouldRunTests(t *testing.T) bool {
 		t.Skip("Skipping API tests because SKIP_API_TESTS is set")
 		return false
 	}
-	
+
 	// Set TEST_DATABASE_URL for the test DB
 	if os.Getenv("TEST_DATABASE_URL") == "" {
 		// Try to use a default test database
 		os.Setenv("TEST_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/quillium_test")
 	}
-	
+
 	return true
 }
 
@@ -88,7 +88,7 @@ func SetupTestDB(t *testing.T) *db.DB {
 		t.Skipf("Failed to initialize test database: %v", err)
 		return nil
 	}
-	
+
 	// Initialize the encryption key for security package
 	key := []byte("01234567890123456789012345678901") // 32-byte key for AES-256
 	err = security.InitEncryption(key)
@@ -107,7 +107,7 @@ func SetupTestDB(t *testing.T) *db.DB {
 		os.Setenv("DATABASE_URL", originalDBURL)
 		testDB.Close()
 	})
-	
+
 	return testDB
 }
 

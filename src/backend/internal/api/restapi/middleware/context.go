@@ -7,8 +7,8 @@ import (
 type contextKey string
 
 const (
-	userIDKey     contextKey = "user_id"
-	isAdminKey    contextKey = "is_admin"
+	userIDKey      contextKey = "user_id"
+	isAdminKey     contextKey = "is_admin"
 	isAPIClientKey contextKey = "is_api_client"
 )
 

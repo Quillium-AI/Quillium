@@ -9,21 +9,6 @@ import (
 	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
 )
 
-// UserResponse represents a user response with sensitive fields removed
-type UserResponse struct {
-	ID      int `json:"id"`
-	Email   string `json:"email"`
-	IsAdmin bool   `json:"is_admin"`
-	IsSso   bool   `json:"is_sso"`
-}
-
-// CreateUserRequest represents a request to create a new user
-type CreateUserRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	IsAdmin  bool   `json:"is_admin"`
-}
-
 // GetCurrentUser returns the current authenticated user's information
 func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context (set by auth middleware)
@@ -35,36 +20,34 @@ func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get user data from database by email
-	// First we need to get all users and find the one with matching ID
-	users, err := dbConn.GetUsers()
+	userObj, err := dbConn.GetUser(nil, &userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve user data"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve user data: " + err.Error()})
 		return
 	}
 
-	// Find the user with matching ID
-	var userData *user.User
-	for _, u := range users {
-		if u.ID != nil && *u.ID == userID {
-			userData = u
-			break
-		}
-	}
-
-	if userData == nil {
+	if userObj == nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		return
+	}
+
+	userSettings, err := dbConn.GetUserSettings(*userObj.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve user settings: " + err.Error()})
 		return
 	}
 
 	// Return user data without sensitive fields
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(UserResponse{
-		ID:      *userData.ID,
-		Email:   userData.Email,
-		IsAdmin: userData.IsAdmin,
-		IsSso:   userData.IsSso,
+		ID:       *userObj.ID,
+		Email:    userObj.Email,
+		IsAdmin:  userObj.IsAdmin,
+		IsSso:    userObj.IsSso,
+		Settings: *userSettings,
 	})
 }
 

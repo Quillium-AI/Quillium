@@ -13,19 +13,19 @@ func WithLogging(next http.HandlerFunc) http.HandlerFunc {
 
 		// Create a custom response writer to capture the status code
 		lrw := newLoggingResponseWriter(w)
-		
+
 		// Process the request
 		next(lrw, r)
-		
+
 		// Log the request details
 		duration := time.Since(start)
-		
+
 		// Check if this is an API client
 		apiClient := "no"
 		if IsAPIClient(r.Context()) {
 			apiClient = "yes"
 		}
-		
+
 		log.Printf("%s %s %d %s - API: %s", r.Method, r.URL.Path, lrw.statusCode, duration, apiClient)
 	}
 }

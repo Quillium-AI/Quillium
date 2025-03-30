@@ -18,30 +18,6 @@ func InitHandlers(db *db.DB) {
 	dbConn = db
 }
 
-// LoginRequest represents a login request
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-// LoginResponse represents a login response
-type LoginResponse struct {
-	Token   string `json:"token"`
-	UserID  int    `json:"user_id"`
-	IsAdmin bool   `json:"is_admin"`
-}
-
-// APIKeyResponse represents an API key response
-type APIKeyResponse struct {
-	APIKey string `json:"api_key"`
-}
-
-// SignupRequest represents a signup request
-type SignupRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 // Login handles user login requests
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -57,10 +33,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate credentials
-	userData, err := dbConn.GetUser(req.Email)
+	userData, err := dbConn.GetUser(&req.Email, nil)
 	if err != nil || userData == nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid credentials"})
+		return
+	}
+
+	userSettings, err := dbConn.GetUserSettings(*userData.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to get user settings"})
 		return
 	}
 
@@ -93,9 +76,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// Return token in response body as well (for non-browser clients)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(LoginResponse{
-		Token:   token,
-		UserID:  *userData.ID,
-		IsAdmin: userData.IsAdmin,
+		Token:    token,
+		UserID:   *userData.ID,
+		IsAdmin:  userData.IsAdmin,
+		Settings: *userSettings,
 	})
 }
 
@@ -190,7 +174,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if user already exists
-	existingUser, err := dbConn.GetUser(req.Email)
+	existingUser, err := dbConn.GetUser(&req.Email, nil)
 	if err == nil && existingUser != nil {
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(map[string]string{"error": "User already exists"})
@@ -227,6 +211,17 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to generate token"})
 		return
 	}
+
+	// Set cookie for browser clients
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil, // Set to true in production with HTTPS
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(24 * time.Hour.Seconds()),
+	})
 
 	// Return the token and user info
 	w.Header().Set("Content-Type", "application/json")

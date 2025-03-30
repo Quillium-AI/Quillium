@@ -17,10 +17,10 @@ var jwtSecret []byte
 func Initialize(db *db.DB, secret []byte) {
 	dbConn = db
 	jwtSecret = secret
-	
+
 	// Initialize middleware
 	middleware.InitAuth(secret, db)
-	
+
 	// Initialize handlers
 	handlers.InitHandlers(db)
 }
@@ -37,19 +37,19 @@ func SetupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/version", withMiddleware(versionHandler, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/auth/login", withMiddleware(handlers.Login, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/auth/signup", withMiddleware(handlers.Signup, middleware.AuthTypeNone))
-	
+
 	// Frontend-only endpoints (JWT auth required)
 	mux.HandleFunc("/api/auth/logout", withMiddleware(handlers.Logout, middleware.AuthTypeFrontend))
 	mux.HandleFunc("/api/user/me", withMiddleware(handlers.GetCurrentUser, middleware.AuthTypeFrontend))
 	mux.HandleFunc("/api/auth/api-key", withMiddleware(handlers.GenerateAPIKey, middleware.AuthTypeFrontend))
-	
+
 	// Admin endpoints (JWT auth required + admin role)
 	mux.HandleFunc("/api/admin/users", withMiddleware(handlers.ListUsers, middleware.AuthTypeFrontend))
 	mux.HandleFunc("/api/admin/users/create", withMiddleware(handlers.CreateUser, middleware.AuthTypeFrontend))
-	
+
 	// API endpoints (API key auth required)
 	mux.HandleFunc("/api/v1/user", withMiddleware(handlers.GetCurrentUser, middleware.AuthTypeAPI))
-	
+
 	// Endpoints accessible via either auth method
 	mux.HandleFunc("/api/v1/data", withMiddleware(dataHandler, middleware.AuthTypeAny))
 }
@@ -83,19 +83,19 @@ func versionHandler(w http.ResponseWriter, r *http.Request) {
 // dataHandler is a sample endpoint that returns different data based on auth type
 func dataHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	// Check if this is an API client
 	if middleware.IsAPIClient(r.Context()) {
 		// API client response
 		json.NewEncoder(w).Encode(map[string]string{
 			"message": "This is the API response",
-			"client": "api",
+			"client":  "api",
 		})
 	} else {
 		// Frontend client response
 		json.NewEncoder(w).Encode(map[string]string{
 			"message": "This is the frontend response",
-			"client": "frontend",
+			"client":  "frontend",
 		})
 	}
 }

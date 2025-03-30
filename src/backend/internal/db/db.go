@@ -410,14 +410,45 @@ func (d *DB) CreateSsoUser(email string, ssoUserId string, ssoProviderId int) (*
 	return id, nil
 }
 
-func (d *DB) GetUser(email string) (*user.User, error) {
-	query := `
-		SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
-		FROM users
-		WHERE email = $1
-	`
+func (d *DB) GetUser(email *string, id *int) (*user.User, error) {
+	// Check if at least one parameter is provided
+	if email == nil && id == nil {
+		return nil, errors.New("at least one of email or id must be provided")
+	}
+
+	var query string
+	var args []interface{}
+
+	// Build query based on which parameters are provided
+	switch {
+	case email != nil && id != nil:
+		// Both email and id are provided
+		query = `
+			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+			FROM users
+			WHERE email = $1 OR id = $2
+		`
+		args = []interface{}{email, *id}
+	case email != nil:
+		// Only email is provided
+		query = `
+			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+			FROM users
+			WHERE email = $1
+		`
+		args = []interface{}{email}
+	case id != nil:
+		// Only id is provided
+		query = `
+			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+			FROM users
+			WHERE id = $1
+		`
+		args = []interface{}{*id}
+	}
+
 	var u user.User
-	err := d.Conn.QueryRow(context.Background(), query, email).Scan(
+	err := d.Conn.QueryRow(context.Background(), query, args...).Scan(
 		&u.ID,
 		&u.Email,
 		&u.PasswordHash,

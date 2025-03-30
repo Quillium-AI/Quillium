@@ -174,7 +174,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	// Test GetUser
-	retrievedUser, err := db.GetUser(testEmail)
+	retrievedUser, err := db.GetUser(&testEmail, nil)
 	if err != nil {
 		t.Fatalf("GetUser returned error: %v", err)
 	}
@@ -287,7 +287,7 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	// Verify the user was created by retrieving it
-	retrievedUser, err := db.GetUser(testEmail)
+	retrievedUser, err := db.GetUser(&testEmail, nil)
 	if err != nil {
 		t.Fatalf("Failed to retrieve created user: %v", err)
 	}
@@ -401,14 +401,14 @@ func TestAdminSettings(t *testing.T) {
 
 	// Create test admin settings
 	testSettings := &settings.AdminSettings{
-		FirecrawlBaseURL: "https://api.firecrawl.dev",
+		FirecrawlBaseURL:        "https://api.firecrawl.dev",
 		FirecrawlAPIKey_encrypt: "encrypted_key_1",
-		OpenAIBaseURL: "https://api.openai.com",
-		OpenAIAPIKey_encrypt: "encrypted_key_2",
-		LLMProfileSpeed: "gpt-3.5-turbo",
-		LLMProfileBalanced: "gpt-4",
-		LLMProfileQuality: "gpt-4-turbo",
-		EnableSignUps: true,
+		OpenAIBaseURL:           "https://api.openai.com",
+		OpenAIAPIKey_encrypt:    "encrypted_key_2",
+		LLMProfileSpeed:         "gpt-3.5-turbo",
+		LLMProfileBalanced:      "gpt-4",
+		LLMProfileQuality:       "gpt-4-turbo",
+		EnableSignUps:           true,
 	}
 
 	// Create the admin settings

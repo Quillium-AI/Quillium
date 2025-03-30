@@ -60,9 +60,9 @@ func TestLogin(t *testing.T) {
 	testUser.ID = userID
 
 	tests := []struct {
-		name            string
-		requestBody     LoginRequest
-		expectedStatus  int
+		name             string
+		requestBody      LoginRequest
+		expectedStatus   int
 		expectedResponse interface{}
 	}{
 		{
