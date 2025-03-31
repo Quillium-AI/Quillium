@@ -10,14 +10,8 @@ import (
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
 )
 
-var dbConn *db.DB
-var jwtSecret []byte
-
 // Initialize sets up the REST API with the necessary dependencies
 func Initialize(db *db.DB, secret []byte) {
-	dbConn = db
-	jwtSecret = secret
-
 	// Initialize middleware
 	middleware.InitAuth(secret, db)
 
@@ -32,20 +26,32 @@ type HealthResponse struct {
 
 // SetupRoutes configures all REST API routes
 func SetupRoutes(mux *http.ServeMux) {
-	// Public endpoints (no auth required)
+	// No Auth endpoints
 	mux.HandleFunc("/api/healthz", withMiddleware(healthCheckHandler, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/version", withMiddleware(versionHandler, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/auth/login", withMiddleware(handlers.Login, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/auth/signup", withMiddleware(handlers.Signup, middleware.AuthTypeNone))
 
 	// Frontend-only endpoints (JWT auth required)
+	// TODO: Implement SSO endpoints
 	mux.HandleFunc("/api/auth/logout", withMiddleware(handlers.Logout, middleware.AuthTypeFrontend))
-	mux.HandleFunc("/api/user/me", withMiddleware(handlers.GetCurrentUser, middleware.AuthTypeFrontend))
-	mux.HandleFunc("/api/auth/api-key", withMiddleware(handlers.GenerateAPIKey, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/auth/api-key/create", withMiddleware(handlers.GenerateAPIKey, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/auth/api-key/delete", withMiddleware(handlers.DeleteAPIKey, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/user/update", withMiddleware(handlers.UpdateUser, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/user/delete", withMiddleware(handlers.DeleteUser, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/user/info", withMiddleware(handlers.GetCurrentUser, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/user/settings", withMiddleware(handlers.UpdateUserSettings, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/user/chats", withMiddleware(handlers.GetChats, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/user/chat/delete", withMiddleware(handlers.DeleteChat, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/user/chat/create", withMiddleware(handlers.CreateChat, middleware.AuthTypeFrontend))
 
 	// Admin endpoints (JWT auth required + admin role)
 	mux.HandleFunc("/api/admin/users", withMiddleware(handlers.ListUsers, middleware.AuthTypeFrontend))
 	mux.HandleFunc("/api/admin/users/create", withMiddleware(handlers.CreateUser, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/admin/users/update", withMiddleware(handlers.UpdateUser, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/admin/users/delete", withMiddleware(handlers.DeleteUser, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/admin/settings/update", withMiddleware(handlers.UpdateAdminSettings, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/admin/settings/get", withMiddleware(handlers.GetAdminSettings, middleware.AuthTypeFrontend))
 
 	// API endpoints (API key auth required)
 	mux.HandleFunc("/api/v1/user", withMiddleware(handlers.GetCurrentUser, middleware.AuthTypeAPI))
@@ -59,7 +65,17 @@ func withMiddleware(handler http.HandlerFunc, authType middleware.AuthType) http
 	// Apply middleware in reverse order (last applied is executed first)
 	h := middleware.WithLogging(handler)
 	h = middleware.WithAuth(authType, h)
-	h = middleware.WithCORS(h)
+
+	// Use different CORS settings based on auth type
+	switch authType {
+	case middleware.AuthTypeFrontend:
+		// For frontend-only endpoints, restrict to localhost
+		h = middleware.WithCORSType(middleware.CORSTypeLocal, h)
+	default:
+		// For other endpoints, use default CORS settings
+		h = middleware.WithCORS(h)
+	}
+
 	return h
 }
 

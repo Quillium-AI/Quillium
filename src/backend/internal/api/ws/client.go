@@ -29,17 +29,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// Client is a middleman between the websocket connection and the hub
-type Client struct {
-	hub *Hub
-
-	// The websocket connection
-	conn *websocket.Conn
-
-	// Buffered channel of outbound messages
-	send chan []byte
-}
-
 // ServeWs handles websocket requests from clients
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)

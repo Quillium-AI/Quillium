@@ -42,3 +42,14 @@ type CreateUserRequest struct {
 	Password string `json:"password"`
 	IsAdmin  bool   `json:"is_admin"`
 }
+
+// ChatSummary represents a summary of a chat
+type ChatSummary struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+}
+
+// UpdateUserSettingsRequest represents the request body for updating user settings
+type UpdateUserSettingsRequest struct {
+	Settings settings.UserSettings `json:"settings"`
+}

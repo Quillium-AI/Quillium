@@ -5,13 +5,6 @@ import (
 	"log"
 )
 
-// Message represents a message sent between clients
-type Message struct {
-	Type    string `json:"type"`
-	Content string `json:"content"`
-	Sender  string `json:"sender,omitempty"`
-}
-
 // HandleMessage processes incoming WebSocket messages
 func HandleMessage(hub *Hub, data []byte) {
 	// For now, just log the message and broadcast it back

@@ -9,15 +9,6 @@ import (
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
 )
 
-// Server represents the API server
-type Server struct {
-	Addr      string
-	WSHub     *ws.Hub
-	HttpMux   *http.ServeMux
-	DB        *db.DB
-	JWTSecret []byte
-}
-
 // NewServer creates a new API server
 func NewServer(addr string, db *db.DB, jwtSecret []byte) *Server {
 	return &Server{

@@ -2,13 +2,64 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 )
+
+// CORSType represents the type of CORS configuration to apply
+type CORSType int
+
+const (
+	// CORSTypeOpen allows requests from any origin
+	CORSTypeOpen CORSType = iota
+	// CORSTypeLocal restricts requests to localhost only
+	CORSTypeLocal
+)
+
+// Allowed origins for local CORS
+var allowedLocalOrigins = []string{
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+}
 
 // WithCORS adds CORS headers to responses
 func WithCORS(next http.HandlerFunc) http.HandlerFunc {
+	return WithCORSType(CORSTypeOpen, next)
+}
+
+// WithCORSType adds CORS headers to responses with specific CORS configuration
+func WithCORSType(corsType CORSType, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Set CORS headers
-		w.Header().Set("Access-Control-Allow-Origin", "*") // In production, you'd want to restrict this
+		origin := r.Header.Get("Origin")
+
+		// Set CORS headers based on type
+		switch corsType {
+		case CORSTypeLocal:
+			// Restrict to localhost only
+			if origin == "" {
+				// No origin header, use default
+				w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+			} else {
+				// Check if origin is allowed
+				allowed := false
+				for _, allowedOrigin := range allowedLocalOrigins {
+					if strings.EqualFold(origin, allowedOrigin) {
+						w.Header().Set("Access-Control-Allow-Origin", origin)
+						allowed = true
+						break
+					}
+				}
+
+				// If origin is not allowed, reject the request
+				if !allowed {
+					w.WriteHeader(http.StatusForbidden)
+					return
+				}
+			}
+		case CORSTypeOpen:
+			// Allow any origin (for public API endpoints)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
 
