@@ -16,6 +16,17 @@ When you create a pull request, CLA Assistant will automatically check if you've
 
 We follow standard git commit message conventions as outlined in our [Code of Conduct](CODE_OF_CONDUCT.md#commit-message-conventions). Please ensure your commit messages follow this format.
 
+## Documentation
+
+Comprehensive documentation for the project is available at [docs.quillium.dev](https://docs.quillium.dev). Please refer to the documentation for detailed information about:
+
+- [API Reference](https://docs.quillium.dev/backend/api/)
+- [Authentication System](https://docs.quillium.dev/backend/authentication/)
+- [Database Schema](https://docs.quillium.dev/backend/database/)
+- [Testing Guidelines](https://docs.quillium.dev/backend/testing/)
+
+When contributing new features or making significant changes, please update the relevant documentation as well.
+
 ## How to Contribute
 
 ### Reporting Bugs
@@ -80,7 +91,43 @@ Enhancement suggestions are also tracked as GitHub issues. Please provide clear 
 
 ## Project Structure
 
-Please refer to the [README.md](README.md#project-structure) for an overview of the project structure.
+The Quillium project is organized into several key components:
+
+### Backend (Go)
+```
+src/backend/
+├── cmd/                  # Application entry points
+│   └── server/           # Main server application
+├── internal/             # Internal packages
+│   ├── api/              # API handlers and routes
+│   │   ├── restapi/      # REST API implementation
+│   │   └── wsapi/        # WebSocket API implementation
+│   ├── auth/             # Authentication logic
+│   ├── chat/             # Chat functionality
+│   ├── db/               # Database access and models
+│   ├── security/         # Security utilities
+│   ├── settings/         # Settings management
+│   └── user/             # User management
+├── migrations/           # Database migrations
+└── tests/                # Integration tests
+```
+
+### Frontend (React)
+```
+src/frontend/
+├── public/               # Static assets
+├── src/
+│   ├── components/       # Reusable UI components
+│   ├── contexts/         # React contexts
+│   ├── hooks/            # Custom React hooks
+│   ├── pages/            # Page components
+│   ├── services/         # API service clients
+│   ├── styles/           # Global styles
+│   └── utils/            # Utility functions
+└── tests/                # Frontend tests
+```
+
+For more detailed information about the project structure and architecture, please refer to the [documentation](https://docs.quillium.dev).
 
 ## Style Guidelines
 
@@ -89,6 +136,11 @@ Please refer to the [README.md](README.md#project-structure) for an overview of 
 - **Go**: Follow the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) and use `gofmt` to format your code.
 - **JavaScript/React**: Follow the ESLint configuration in the project. We use a combination of React best practices and Airbnb style guide.
 - **CSS**: Use CSS modules for component styling to avoid global style conflicts.
+
+### Testing Requirements
+
+- **Backend**: All new features should include appropriate unit tests and integration tests. See the [Testing Documentation](https://docs.quillium.dev/backend/testing/) for details.
+- **Frontend**: Components should have unit tests using React Testing Library.
 
 ### Commit Messages
 
