@@ -1,25 +1,22 @@
 name: Update Contributors
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    types: [closed]
-    branches: [main, master]
+  # Run weekly on Sunday at midnight
+  schedule:
+    - cron: '0 0 * * 0'
   # Allow manual triggering
   workflow_dispatch:
 
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -56,8 +53,9 @@ jobs:
               email = parts[1].strip()
               date = parts[2].strip() if len(parts) > 2 else ''
               
-              # Skip bots
-              if '[bot]' in name or '[bot]' in email:
+              # Skip bots and GitHub actions
+              if '[bot]' in name or '[bot]' in email or 'github-actions' in name.lower() or 'github-actions' in email.lower() or 'noreply@github.com' in email.lower():
+                  print(f"Skipping bot: {name} <{email}>")
                   continue
                   
               # Create a GitHub-like username from email if needed
@@ -129,11 +127,16 @@ jobs:
         run: |
           git diff --exit-code CONTRIBUTORS.md || echo "changes=true" >> $GITHUB_OUTPUT
       
-      - name: Commit changes if needed
+      - name: Create Pull Request if needed
         if: steps.git-check.outputs.changes == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add CONTRIBUTORS.md
-          git commit -m "docs: update contributors list [skip ci]"
-          git push
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: "docs: update contributors list [skip ci]"
+          title: "docs: update contributors list"
+          body: |
+            This PR updates the contributors list in CONTRIBUTORS.md based on the Git history.
+            
+            This is an automated PR created by the contributors workflow.
+          branch: update-contributors
+          base: main
