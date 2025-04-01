@@ -78,6 +78,7 @@ func CreateTables(conn *pgx.Conn) error {
 			id SERIAL PRIMARY KEY,
 			user_id INT NOT NULL,
 			content JSONB NOT NULL,
+			sources JSONB NOT NULL,
 			is_public BOOLEAN NOT NULL DEFAULT FALSE,
 			public_uuid VARCHAR(255) NULL UNIQUE,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -1,0 +1,81 @@
+name: Update Contributors
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    types: [closed]
+    branches: [main, master]
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  update-contributors:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install all-contributors-cli
+        run: npm install -g all-contributors-cli
+      
+      - name: Get recent contributors
+        id: get-contributors
+        run: |
+          # Get unique contributors since last tag or last 100 commits
+          CONTRIBUTORS=$(git log -100 --format='%an <%ae>' | sort -u)
+          echo "Found contributors: $CONTRIBUTORS"
+          echo "contributors=$CONTRIBUTORS" >> $GITHUB_OUTPUT
+      
+      - name: Initialize .all-contributorsrc if needed
+        run: |
+          if [ ! -f .all-contributorsrc ]; then
+            all-contributors init
+          fi
+      
+      - name: Add contributors
+        run: |
+          # Read the contributors from the previous step
+          IFS=$'\n'
+          CONTRIBUTOR_LIST=(${{ steps.get-contributors.outputs.contributors }})
+          
+          for contributor in "${CONTRIBUTOR_LIST[@]}"; do
+            # Extract name and email
+            NAME=$(echo $contributor | sed -E 's/(.*) <.*>/\1/')
+            EMAIL=$(echo $contributor | sed -E 's/.* <(.*)>/\1/')
+            
+            # Get GitHub username from email (if possible)
+            USERNAME=$(echo $EMAIL | sed -E 's/(.*)@.*/\1/')
+            
+            echo "Processing contributor: $NAME ($EMAIL)"
+            
+            # Try to add contributor - continue on error
+            all-contributors add $USERNAME code || true
+          done
+          
+          # Generate the contributors list in markdown
+          all-contributors generate
+      
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code CONTRIBUTORS.md || echo "changes=true" >> $GITHUB_OUTPUT
+      
+      - name: Commit changes if needed
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add CONTRIBUTORS.md .all-contributorsrc
+          git commit -m "docs: update contributors list [skip ci]"
+          git push
