@@ -4,39 +4,14 @@ import subprocess
 import re
 import json
 import os
-import urllib.request
 from datetime import datetime
 
-def get_github_username(email, name):
-    """Try to find the GitHub username from an email or name."""
-    # First, try to get username from GitHub API by email
-    try:
-        # Use the GitHub email API
-        url = f"https://api.github.com/search/users?q={email}+in:email"
-        headers = {"User-Agent": "Python/3.10"}
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode())
-            if data.get('total_count', 0) > 0:
-                return data['items'][0]['login']
-    except Exception as e:
-        print(f"Error looking up email {email}: {e}")
-    
-    # Next, try by name
-    try:
-        # Use the GitHub users API
-        url = f"https://api.github.com/search/users?q={name}+in:name"
-        headers = {"User-Agent": "Python/3.10"}
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode())
-            if data.get('total_count', 0) > 0:
-                return data['items'][0]['login']
-    except Exception as e:
-        print(f"Error looking up name {name}: {e}")
-    
-    # Fallback: use email username part
-    return email.split('@')[0].lower()
+def normalize_username(text):
+    """Convert text to a normalized form for comparison."""
+    if not text:
+        return ""
+    # Remove spaces, convert to lowercase
+    return re.sub(r'[^a-z0-9]', '', text.lower())
 
 def extract_existing_contributors(content):
     """Extract existing contributors from the markdown file."""
@@ -51,6 +26,17 @@ def extract_existing_contributors(content):
     
     print(f"Found {len(existing_contributors)} existing contributors: {existing_contributors}")
     return existing_contributors
+
+def extract_username_from_email(email):
+    """Extract a username from an email address."""
+    if not email or '@' not in email:
+        return ""
+    
+    # Get the part before the @ symbol
+    username = email.split('@')[0].lower()
+    # Remove special characters
+    username = re.sub(r'[^a-z0-9]', '', username)
+    return username
 
 def main():
     # Get contributors from git log
@@ -85,8 +71,22 @@ def main():
             print(f"Skipping bot: {name} <{email}>")
             continue
         
-        # Get GitHub username
-        username = get_github_username(email, name)
+        # Extract username from email
+        username = extract_username_from_email(email)
+        
+        # Normalize name for comparison
+        normalized_name = normalize_username(name)
+        
+        # Try to find a matching GitHub username
+        if normalized_name in existing_contributors:
+            # If normalized name matches an existing contributor, use that
+            username = normalized_name
+        elif username in existing_contributors:
+            # If email username matches an existing contributor, use that
+            pass
+        else:
+            # Use the first part of the email as username
+            pass
         
         # Skip if this contributor is already in the file
         if username.lower() in existing_contributors:
