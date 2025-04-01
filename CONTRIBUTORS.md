@@ -19,6 +19,7 @@ Thank you to all the people who have contributed to Quillium!
 | Contributor | Contributions |
 | :--- | :--- |
 | <a href="https://github.com/HadiCherkaoui"><img src="https://avatars.githubusercontent.com/HadiCherkaoui?s=100" width="100px;" alt="Hadi Cherkaoui"/><br /><sub><b>Hadi Cherkaoui</b></sub></a> | 💻 Code |
+| <a href="https://github.com/github"><img src="https://avatars.githubusercontent.com/github?s=100" width="100px;" alt="Hadi Cherkaoui"/><br /><sub><b>Hadi Cherkaoui</b></sub></a> | 💻 Code |
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
