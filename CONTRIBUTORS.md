@@ -5,7 +5,7 @@ Thank you to all the people who have contributed to Quillium!
 ## Core Team
 
 - [Hadi Cherkaoui](https://github.com/HadiCherkaoui)
-- [Devin Voegele](https://github.com/devinvoegelee))
+- [Devin Voegele](https://github.com/devinvoegelee)
 - [Devaughn Lawrence](https://github.com/Devaughn-glitch)
 
 ## Contributors
