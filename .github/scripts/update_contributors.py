@@ -38,12 +38,33 @@ def get_github_username(email, name):
     # Fallback: use email username part
     return email.split('@')[0].lower()
 
+def extract_existing_contributors(content):
+    """Extract existing contributors from the markdown file."""
+    existing_contributors = set()
+    
+    # Use regex to find GitHub usernames in the content
+    pattern = r'https://github\.com/([\w-]+)'
+    matches = re.findall(pattern, content)
+    
+    for username in matches:
+        existing_contributors.add(username.lower())
+    
+    print(f"Found {len(existing_contributors)} existing contributors: {existing_contributors}")
+    return existing_contributors
+
 def main():
     # Get contributors from git log
     git_log = subprocess.check_output(
         ['git', 'log', '--format=%an|%ae|%ad', '--date=short'],
         text=True
     )
+    
+    # Read the current CONTRIBUTORS.md file
+    with open('CONTRIBUTORS.md', 'r') as f:
+        content = f.read()
+    
+    # Extract existing contributors
+    existing_contributors = extract_existing_contributors(content)
     
     # Parse contributors
     contributors = {}
@@ -67,6 +88,11 @@ def main():
         # Get GitHub username
         username = get_github_username(email, name)
         
+        # Skip if this contributor is already in the file
+        if username.lower() in existing_contributors:
+            print(f"Skipping existing contributor: {name} ({username})")
+            continue
+        
         # Store the earliest contribution date
         if username not in contributors or (date and date < contributors[username].get('date', '9999-99-99')):
             contributors[username] = {
@@ -76,15 +102,16 @@ def main():
                 'username': username
             }
     
+    # If no new contributors, exit early
+    if not contributors:
+        print("No new contributors found. Exiting.")
+        return
+    
     # Sort contributors by name
     sorted_contributors = sorted(
         contributors.items(),
         key=lambda x: x[1]['name'].lower()
     )
-    
-    # Read the current CONTRIBUTORS.md file
-    with open('CONTRIBUTORS.md', 'r') as f:
-        content = f.read()
     
     # Find the section to replace
     start_marker = '<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->'
@@ -97,6 +124,34 @@ def main():
         print("Could not find contributors section markers in CONTRIBUTORS.md")
         exit(1)
     
+    # Extract the existing table content
+    table_content = content[start_index + len(start_marker):end_index].strip()
+    
+    # Find the end of the table (before the closing comments)
+    table_end = table_content.find('<!-- markdownlint-restore -->')
+    if table_end == -1:
+        # If not found, assume it's a new table
+        table_rows = []
+    else:
+        # Extract just the table rows
+        table_rows_content = table_content[:table_end].strip()
+        # Split by newlines and filter out header rows
+        rows = table_rows_content.split('\n')
+        # Keep only the contributor rows (skip headers)
+        table_rows = [row for row in rows if row.startswith('|') and not row.startswith('| :')]
+        # Remove the header rows if they exist
+        while table_rows and (not table_rows[0].startswith('| <a href') or '| Contributor |' in table_rows[0]):
+            table_rows.pop(0)
+    
+    # Add new contributors to the table
+    for username, data in sorted_contributors:
+        name = data['name']
+        github_username = data['username']
+        # Use GitHub avatar API to get an avatar
+        avatar_url = f"https://avatars.githubusercontent.com/{github_username}?s=100"
+        new_row = f"| <a href=\"https://github.com/{github_username}\"><img src=\"{avatar_url}\" width=\"100px;\" alt=\"{name}\"/><br /><sub><b>{name}</b></sub></a> | 💻 Code |"
+        table_rows.append(new_row)
+    
     # Generate the new contributors table
     contributors_table = start_marker + '\n'
     contributors_table += '<!-- prettier-ignore-start -->\n'
@@ -105,12 +160,9 @@ def main():
     contributors_table += '| Contributor | Contributions |\n'
     contributors_table += '| :--- | :--- |\n'
     
-    for username, data in sorted_contributors:
-        name = data['name']
-        github_username = data['username']
-        # Use GitHub avatar API to get an avatar
-        avatar_url = f"https://avatars.githubusercontent.com/{github_username}?s=100"
-        contributors_table += f"| <a href=\"https://github.com/{github_username}\"><img src=\"{avatar_url}\" width=\"100px;\" alt=\"{name}\"/><br /><sub><b>{name}</b></sub></a> | 💻 Code |\n"
+    # Add all rows
+    for row in table_rows:
+        contributors_table += row + '\n'
     
     contributors_table += '\n<!-- markdownlint-restore -->\n'
     contributors_table += '<!-- prettier-ignore-end -->\n'
@@ -123,7 +175,7 @@ def main():
     with open('CONTRIBUTORS.md', 'w') as f:
         f.write(new_content)
     
-    print(f"Updated CONTRIBUTORS.md with {len(sorted_contributors)} contributors")
+    print(f"Updated CONTRIBUTORS.md with {len(sorted_contributors)} new contributors")
 
 if __name__ == "__main__":
     main()
