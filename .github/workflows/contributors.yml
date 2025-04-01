@@ -32,10 +32,17 @@ jobs:
       - name: Get recent contributors
         id: get-contributors
         run: |
+          # Create a temporary file to store contributors
+          TEMP_FILE=$(mktemp)
+          
           # Get unique contributors since last tag or last 100 commits
-          CONTRIBUTORS=$(git log -100 --format='%an <%ae>' | sort -u)
-          echo "Found contributors: $CONTRIBUTORS"
-          echo "contributors=$CONTRIBUTORS" >> $GITHUB_OUTPUT
+          git log -100 --format='%an <%ae>' | sort -u > "$TEMP_FILE"
+          
+          echo "Found contributors:"
+          cat "$TEMP_FILE"
+          
+          # Store the file path for later use
+          echo "contributors_file=$TEMP_FILE" >> $GITHUB_OUTPUT
       
       - name: Initialize .all-contributorsrc if needed
         run: |
@@ -45,23 +52,31 @@ jobs:
       
       - name: Add contributors
         run: |
-          # Read the contributors from the previous step
-          IFS=$'\n'
-          CONTRIBUTOR_LIST=(${{ steps.get-contributors.outputs.contributors }})
+          # Read the contributors from the file
+          CONTRIBUTORS_FILE="${{ steps.get-contributors.outputs.contributors_file }}"
           
-          for contributor in "${CONTRIBUTOR_LIST[@]}"; do
+          while IFS= read -r contributor; do
+            # Skip empty lines
+            [ -z "$contributor" ] && continue
+            
             # Extract name and email
-            NAME=$(echo $contributor | sed -E 's/(.*) <.*>/\1/')
-            EMAIL=$(echo $contributor | sed -E 's/.* <(.*)>/\1/')
+            NAME=$(echo "$contributor" | sed -E 's/(.*) <.*>/\1/')
+            EMAIL=$(echo "$contributor" | sed -E 's/.* <(.*)>/\1/')
             
             # Get GitHub username from email (if possible)
-            USERNAME=$(echo $EMAIL | sed -E 's/(.*)@.*/\1/')
+            USERNAME=$(echo "$EMAIL" | sed -E 's/(.*)@.*/\1/')
+            
+            # Skip dependabot and other bots
+            if [[ "$USERNAME" == *"[bot]"* ]]; then
+              echo "Skipping bot: $USERNAME"
+              continue
+            fi
             
             echo "Processing contributor: $NAME ($EMAIL)"
             
             # Try to add contributor - continue on error
-            all-contributors add $USERNAME code || true
-          done
+            all-contributors add "$USERNAME" code || true
+          done < "$CONTRIBUTORS_FILE"
           
           # Generate the contributors list in markdown
           all-contributors generate
