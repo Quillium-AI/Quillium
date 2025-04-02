@@ -1,55 +1,24 @@
 name: Update Contributors
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Daily at midnight
-  workflow_dispatch:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
-  update-contributors:
+  add-contributors:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Full commit history
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install all-contributors-cli
-        run: npm install -g all-contributors-cli@6.20.0
-
-      - name: Update contributors
-        run: |
-          # Check for missing contributors
-          missing=$(npx all-contributors check | grep 'Missing contributors:' | cut -d':' -f2 | xargs)
-          
-          if [ -n "$missing" ]; then
-            echo "$missing" | tr ',' '\n' | while read user; do
-              npx all-contributors add "$(echo $user | xargs)" code
-            done
-            npx all-contributors generate
-          else
-            echo "No new contributors found"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create PR if changes
-        uses: peter-evans/create-pull-request@v5
-        if: success()
-        with:
-          commit-message: "docs: Update contributors list"
-          title: "📚 Update project contributors"
-          branch: update-contributors
-          base: main
-          body: |
-            Automated update of contributors list
-            Added new contributors detected through commit history
+    - uses: actions/checkout@v1
+    - uses: sinchang/all-contributors-action@master
+      env:
+        GITHUB_REPOSITORY: ${{ secrets.GITHUB_REPOSITORY }}
+    - uses: gr2m/create-or-update-pull-request-action@v1.x
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+      with:
+        branch: ${{ env.branch }}
+        body: ${{ env.body }}
+        title: ${{ env.title }}
+        commit-message: ${{ env.commitMessage }}
