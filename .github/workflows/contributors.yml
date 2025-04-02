@@ -27,17 +27,7 @@ jobs:
       # Ensure configuration exists (modify if needed)
       - name: Initialize contributors config
         run: |
-          if [ ! -f .all-contributorsrc ]; then
-            npx all-contributors init --yes \
-              --project-name "Quillium" \
-              --project-owner "HadiCherkaoui" \
-              --repo-type "github" \
-              --repo-host "https://github.com" \
-              --files "CONTRIBUTORS.md" \
-              --commit-convention "angular" \
-              --contributors-per-line 7 \
-              --skip-ci
-          fi
+            npx all-contributors init --yes
 
       # Generate contributors file without committing
       - name: Update CONTRIBUTORS.md
