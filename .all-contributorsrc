@@ -3,12 +3,25 @@
   "projectOwner": "HadiCherkaoui",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "files": ["CONTRIBUTORS.md"],
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
   "imageSize": 100,
   "commit": true,
   "commitConvention": "angular",
   "contributorsPerLine": 7,
   "skipCi": true,
   "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors-<%= contributors.length %>-orange.svg?style=flat-square)](#contributors)",
-  "contributorTemplate": "<%= avatar %>\n<%= username %>"
+"contributorTemplate": "<a href=\"https://github.com/<%= contributor.login %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"100px;\" alt=\"<%= contributor.name %>\"/><br /><sub><b><%= contributor.name %></b></sub></a>",
+  "contributors": [
+    {
+      "login": "HadiCherkaoui",
+      "name": "Hadi Cherkaoui",
+      "avatar_url": "https://avatars.githubusercontent.com/u/134227113?v=4",
+      "profile": "https://github.com/HadiCherkaoui",
+      "contributions": [
+        "code"
+      ]
+    }
+  ]
 }
