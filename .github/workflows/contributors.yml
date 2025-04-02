@@ -18,3 +18,5 @@ jobs:
         name: Update contributors
         with:
           token: ${{ secrets.PAT }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
