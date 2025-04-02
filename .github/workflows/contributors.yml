@@ -2,8 +2,8 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight
-  workflow_dispatch:  # Allows manual triggering of the workflow
+    - cron: '0 0 * * *'  # Daily at midnight
+  workflow_dispatch:     # Manual trigger
 
 jobs:
   update-contributors:
@@ -13,46 +13,24 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout with full history
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          fetch-depth: 0  # Critical for contributor detection
 
-      - name: Install all-contributors-cli
-        run: npm install --no-save all-contributors-cli@6.18.0
-
-      - name: Identify and add new contributors
-        run: |
-          # Check for new contributors not yet added
-          missing_contributors=$(npx all-contributors check | grep 'Missing contributors:' | sed 's/Missing contributors: //')
-          
-          if [ -n "$missing_contributors" ]; then
-            for contributor in $missing_contributors; do
-              # Add each missing contributor with a default contribution type
-              npx all-contributors add $contributor code
-            done
-            # Generate the updated contributors list
-            npx all-contributors generate
-          else
-            echo "No new contributors to add."
-          fi
+      - name: Update contributors
+        uses: all-contributors/all-contributors-action@v1
+        with:
+          command: auto
+          args: --commit
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}  # Use default token
 
       - name: Create Pull Request
+        if: success()
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.PAT }}
-          commit-message: "docs(contributors): update contributors list"
-          title: "Update contributors list"
-          body: |
-            Automated update of contributors list by GitHub Actions.
-
-            **Changes:**
-            - Updated CONTRIBUTORS.md with new contributors.
+          commit-message: "docs: update contributors list"
+          title: "📚 Update contributors list"
           branch: update-contributors
           base: main
-          author: github-actions <github-actions@github.com>
