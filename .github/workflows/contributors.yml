@@ -10,6 +10,10 @@ jobs:
   add-contributors:
     runs-on: ubuntu-latest
     steps:
+    - name: git identity
+      run: |
+       git config --global user.email "github@github.com"
+       git config --global user.name "Contributer Bot"
     - uses: actions/checkout@v1
     - uses: sinchang/all-contributors-action@master
       env:
