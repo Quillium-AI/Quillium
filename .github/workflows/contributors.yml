@@ -15,28 +15,37 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main  # Check out the protected branch
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install all-contributors-cli
+      - name: Install CLI
         run: npm install -g all-contributors-cli
 
-      - name: Generate contributors
+      - name: Auto-add missing contributors
         run: |
-          npx all-contributors check
+          # Capture missing contributors
+          MISSING=$(npx all-contributors check | awk '/Missing contributors/{flag=1; next} /^$/{flag=0} flag')
+          
+          # Add each missing contributor with default 'code' contribution
+          for username in $MISSING; do
+            username=$(echo "$username" | tr -d ',')  # Clean commas
+            echo "Adding contributor: $username"
+            npx all-contributors add "$username" code
+          done
+          
+          # Generate final output
           npx all-contributors generate
 
-      - name: Create Pull Request
+      - name: Create PR
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: "update-contributors"  # Unique branch name
+          branch: "update-contributors"
           commit-message: "docs: Update contributors list"
-          title: "📌 Update contributors list"
-          body: "Automated update of contributors list"
-          base: main  # Target protected branch
-          delete-branch: true  # Clean up after merge
+          title: "📌 Update contributors"
+          body: "Automatically added missing contributors"
+          base: main
           token: ${{ secrets.PAT }}
