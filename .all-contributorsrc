@@ -12,13 +12,31 @@
   "contributorsPerLine": 7,
   "skipCi": true,
   "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors-<%= contributors.length %>-orange.svg?style=flat-square)](#contributors)",
-"contributorTemplate": "<a href=\"https://github.com/<%= contributor.login %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"100px;\" alt=\"<%= contributor.name %>\"/><br /><sub><b><%= contributor.name %></b></sub></a>",
+  "contributorTemplate": "<a href=\"https://github.com/<%= contributor.login %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"100px;\" alt=\"<%= contributor.name %>\"/><br /><sub><b><%= contributor.name %></b></sub></a>",
   "contributors": [
     {
       "login": "HadiCherkaoui",
       "name": "Hadi Cherkaoui",
       "avatar_url": "https://avatars.githubusercontent.com/u/134227113?v=4",
       "profile": "https://github.com/HadiCherkaoui",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "dependabot[bot]",
+      "name": "dependabot[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/29110?v=4",
+      "profile": "https://github.com/apps/dependabot",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Devaughn-glitch",
+      "name": "Devaughn Lawrence",
+      "avatar_url": "https://avatars.githubusercontent.com/u/145268880?v=4",
+      "profile": "https://github.com/Devaughn-glitch",
       "contributions": [
         "code"
       ]
