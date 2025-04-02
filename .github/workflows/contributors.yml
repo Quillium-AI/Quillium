@@ -3,7 +3,7 @@ name: Update Contributors
 on:
   schedule:
     - cron: '0 0 * * *'  # Daily at midnight
-  workflow_dispatch:     # Manual trigger
+  workflow_dispatch:
 
 jobs:
   update-contributors:
@@ -16,15 +16,15 @@ jobs:
       - name: Checkout with full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Critical for contributor detection
+          fetch-depth: 0  # Required for commit history analysis
 
       - name: Update contributors
-        uses: all-contributors/all-contributors-action@v1
+        uses: all-contributors/app-action@v1.0.4  # Correct action reference
         with:
           command: auto
           args: --commit
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}  # Use default token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Pull Request
         if: success()
