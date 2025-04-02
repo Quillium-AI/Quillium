@@ -39,15 +39,9 @@ jobs:
               --skip-ci
           fi
 
-      # Auto-detect contributors from GitHub
-      - name: Check for new contributors
-        run: npx all-contributors check
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-
       # Generate contributors file without committing
       - name: Update CONTRIBUTORS.md
-        run: npx all-contributors generate --skip-commit  # Override config's commit setting [[1]]
+        run: npx all-contributors generate
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
