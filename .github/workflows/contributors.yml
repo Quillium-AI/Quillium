@@ -2,8 +2,8 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight
-  workflow_dispatch:  # Manual trigger
+    - cron: '0 0 * * *'  # Daily at midnight
+  workflow_dispatch:
 
 jobs:
   update-contributors:
@@ -16,46 +16,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for contributor detection
+          fetch-depth: 0  # Full commit history
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
 
       - name: Install all-contributors-cli
-        run: npm install --no-save all-contributors-cli@6.18.0
+        run: npm install -g all-contributors-cli@6.20.0
 
-      - name: Identify and add new contributors
+      - name: Update contributors
         run: |
-          # Capture CLI output for debugging
-          npx all-contributors check
-          # Extract missing contributors correctly (comma-separated)
-          missing_contributors=$(npx all-contributors check | grep 'Missing contributors:' | sed 's/Missing contributors: //')
+          # Check for missing contributors
+          missing=$(npx all-contributors check | grep 'Missing contributors:' | cut -d':' -f2 | xargs)
           
-          if [ -n "$missing_contributors" ]; then
-            # Split by commas, trim whitespace, and add each contributor
-            echo "$missing_contributors" | tr ',' '\n' | while read -r contributor; do
-              contributor_trimmed=$(echo "$contributor" | xargs)
-              echo "Adding contributor: $contributor_trimmed"
-              npx all-contributors add "$contributor_trimmed" code
+          if [ -n "$missing" ]; then
+            echo "$missing" | tr ',' '\n' | while read user; do
+              npx all-contributors add "$(echo $user | xargs)" code
             done
-            # Generate the updated contributors list
             npx all-contributors generate
           else
-            echo "No new contributors to add."
+            echo "No new contributors found"
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}  # Ensure PAT has repo permissions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Pull Request
+      - name: Create PR if changes
         uses: peter-evans/create-pull-request@v5
+        if: success()
         with:
-          token: ${{ secrets.PAT }}
-          commit-message: "docs(contributors): update contributors list"
-          title: "Update contributors list"
-          body: |
-            Automated update of contributors list.
-            **Changes:** Updated CONTRIBUTORS.md with new contributors.
+          commit-message: "docs: Update contributors list"
+          title: "📚 Update project contributors"
           branch: update-contributors
           base: main
+          body: |
+            Automated update of contributors list
+            Added new contributors detected through commit history
