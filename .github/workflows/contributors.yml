@@ -1,28 +1,18 @@
 name: Update Contributors
-
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
-  add-contributors:
+  contributors:
     runs-on: ubuntu-latest
     steps:
-    - name: git identity
-      run: |
-       git config --global user.email "github@github.com"
-       git config --global user.name "Contributer Bot"
-    - uses: actions/checkout@v1
-    - uses: sinchang/all-contributors-action@master
-      env:
-        GITHUB_REPOSITORY: ${{ secrets.GITHUB_REPOSITORY }}
-    - uses: gr2m/create-or-update-pull-request-action@v1.x
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
-      with:
-        branch: ${{ env.branch }}
-        body: ${{ env.body }}
-        title: ${{ env.title }}
-        commit-message: ${{ env.commitMessage }}
+      - uses: actions/checkout@v3
+      - uses: JoshuaKGoldberg/all-contributors-auto-action@v0.3.2
+        name: Update contributors
+        with:
+            token: ${{ secrets.PAT }}
