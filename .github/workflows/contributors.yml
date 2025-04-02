@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write  # Required for PR creation [[8]]
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -21,22 +21,49 @@ jobs:
         with:
           node-version: 16
 
-      - name: Install all-contributors-cli (without saving to package.json)
-        run: npm install --no-save all-contributors-cli@6.18.0  # <-- Added --no-save flag [[4]]
+      - name: Install all-contributors-cli
+        run: npm install --no-save all-contributors-cli@6.18.0
 
-      - name: Update contributors
-        run: npx all-contributors generate
+      # Ensure configuration exists (modify if needed)
+      - name: Initialize contributors config
+        run: |
+          if [ ! -f .all-contributorsrc ]; then
+            npx all-contributors init --yes \
+              --project-name "Quillium" \
+              --project-owner "HadiCherkaoui" \
+              --repo-type "github" \
+              --repo-host "https://github.com" \
+              --files "CONTRIBUTORS.md" \
+              --commit-convention "angular" \
+              --contributors-per-line 7 \
+              --skip-ci
+          fi
+
+      # Auto-detect contributors from GitHub
+      - name: Check for new contributors
+        run: npx all-contributors check
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
-      # Create PR without npm artifacts
+      # Generate contributors file without committing
+      - name: Update CONTRIBUTORS.md
+        run: npx all-contributors generate --skip-commit  # Override config's commit setting [[1]]
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+
+      # Create PR with clean changes
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT }}
           commit-message: "docs(contributors): update list"
           title: "Update contributors list"
-          body: "Automated contributors update by GitHub Actions"
+          body: |
+            Automated contributors update by GitHub Actions
+            
+            **Changes:**
+            - Updated CONTRIBUTORS.md with new contributors
+            - Removed npm artifacts from tracking
           branch: update-contributors
           base: main
           author: github-actions <github-actions@github.com>
