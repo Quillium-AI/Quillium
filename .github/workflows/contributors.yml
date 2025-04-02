@@ -39,3 +39,4 @@ jobs:
           body: "Automated update of contributors list"
           base: main  # Target protected branch
           delete-branch: true  # Clean up after merge
+          token: ${{ secrets.PAT }}
