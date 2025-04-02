@@ -2,8 +2,8 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Daily at midnight
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   update-contributors:
@@ -13,24 +13,49 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout with full history
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for commit history analysis
+          fetch-depth: 0  # Full history for contributor detection
 
-      - name: Update contributors
-        uses: all-contributors/app-action@v1.0.4  # Correct action reference
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          command: auto
-          args: --commit
+          node-version: 16
+
+      - name: Install all-contributors-cli
+        run: npm install --no-save all-contributors-cli@6.18.0
+
+      - name: Identify and add new contributors
+        run: |
+          # Capture CLI output for debugging
+          npx all-contributors check
+          # Extract missing contributors correctly (comma-separated)
+          missing_contributors=$(npx all-contributors check | grep 'Missing contributors:' | sed 's/Missing contributors: //')
+          
+          if [ -n "$missing_contributors" ]; then
+            # Split by commas, trim whitespace, and add each contributor
+            echo "$missing_contributors" | tr ',' '\n' | while read -r contributor; do
+              contributor_trimmed=$(echo "$contributor" | xargs)
+              echo "Adding contributor: $contributor_trimmed"
+              npx all-contributors add "$contributor_trimmed" code
+            done
+            # Generate the updated contributors list
+            npx all-contributors generate
+          else
+            echo "No new contributors to add."
+          fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}  # Ensure PAT has repo permissions
 
       - name: Create Pull Request
-        if: success()
         uses: peter-evans/create-pull-request@v5
         with:
-          commit-message: "docs: update contributors list"
-          title: "📚 Update contributors list"
+          token: ${{ secrets.PAT }}
+          commit-message: "docs(contributors): update contributors list"
+          title: "Update contributors list"
+          body: |
+            Automated update of contributors list.
+            **Changes:** Updated CONTRIBUTORS.md with new contributors.
           branch: update-contributors
           base: main
