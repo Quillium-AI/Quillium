@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
 	"github.com/gorilla/websocket"
 )
 
@@ -19,7 +20,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer
-	maxMessageSize = 512
+	maxMessageSize = 512 * 1024 // Increased to 512KB to accommodate larger chat messages
 )
 
 var upgrader = websocket.Upgrader{
@@ -37,7 +38,19 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	// Extract user ID from request context
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		log.Println("Failed to extract user ID from request context")
+		return
+	}
+
+	client := &Client{
+		hub:    hub,
+		conn:   conn,
+		send:   make(chan []byte, 256),
+		userID: userID,
+	}
 	client.hub.register <- client
 
 	// Start goroutines for pumping messages
@@ -62,7 +75,9 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		c.hub.broadcast <- message
+
+		// Process the message
+		HandleMessage(c.hub, c, message)
 	}
 }
 

@@ -55,9 +55,17 @@ func WithCORSType(corsType CORSType, next http.HandlerFunc) http.HandlerFunc {
 					return
 				}
 			}
+			// Always set Allow-Credentials for local development
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		case CORSTypeOpen:
-			// Allow any origin (for public API endpoints)
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			// For open CORS with credentials, we can't use wildcard
+			if origin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			} else {
+				// Fallback to wildcard for requests without origin (not supporting credentials)
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			}
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")

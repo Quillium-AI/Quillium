@@ -60,7 +60,7 @@ Enhancement suggestions are also tracked as GitHub issues. Please provide clear 
    
    # Install frontend dependencies
    cd ../frontend
-   npm install
+   pnpm install
    ```
 
 2. Run the application in development mode
@@ -75,7 +75,7 @@ Enhancement suggestions are also tracked as GitHub issues. Please provide clear 
    
    # Terminal 2 - Run the frontend
    cd src/frontend
-   npm run dev
+   pnpm dev
    ```
 
 3. Make your changes and ensure they pass all tests
@@ -86,8 +86,29 @@ Enhancement suggestions are also tracked as GitHub issues. Please provide clear 
    
    # Run frontend tests
    cd src/frontend
-   npm test
+   pnpm test
    ```
+
+### Docker Development
+
+**Important:** When building the Docker image, you must pre-build the frontend locally first:
+
+```bash
+# Navigate to the frontend directory
+cd src/frontend
+
+# Install dependencies if not already installed
+pnpm install
+
+# Build the frontend
+pnpm build
+
+# Then you can build the Docker image from the project root
+cd ../../
+docker compose up -d --build
+```
+
+The Dockerfile is configured to use the pre-built frontend files rather than building them inside the container. This approach resolves dependency issues and significantly improves build times.
 
 ## Project Structure
 

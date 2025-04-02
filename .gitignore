@@ -51,3 +51,7 @@ data/
 # Build artifacts
 bin/
 tmp/
+.next
+test_no_wiki.json
+
+docker-compose-dev.yml
