@@ -4,19 +4,21 @@ on:
   workflow_dispatch:
   pull_request:
     types: [closed]
-    branches:
-      - main  # Update to your default branch
+    branches: [main]
+  push:
+    branches: [main]
 
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed for proper git history
+          fetch-depth: 0  # Required for complete git history
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -26,16 +28,25 @@ jobs:
       - name: Install All Contributors CLI
         run: npm install -g all-contributors-cli
 
-      - name: Add Contributor & Generate List
+      - name: Handle Merged Pull Requests
         if: github.event.pull_request.merged == true
         run: |
-          # Get PR author from event payload
-          CONTRIBUTOR="${{ github.event.pull_request.user.login }}"
+          # Add PR author as contributor
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          all-contributors add "$PR_AUTHOR" code
+          all-contributors generate
+
+      - name: Handle Direct Pushes
+        if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
+        run: |
+          # Get unique commit authors from push
+          COMMIT_AUTHORS=$(git log --pretty=format:'%an <%ae>' ${{ github.event.before }}..${{ github.event.after }} | sort -u)
           
-          # Add contributor with 'code' type (prevents duplicates automatically)
-          all-contributors add $CONTRIBUTOR code
+          # Add each author using CLI's email lookup
+          while IFS= read -r author; do
+            all-contributors add --email "$author" code
+          done <<< "$COMMIT_AUTHORS"
           
-          # Update contributors file
           all-contributors generate
 
       - name: Commit and Push Changes
@@ -44,4 +55,4 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add CONTRIBUTORS.md .all-contributorsrc
           git commit -m "docs: update contributors list [skip ci]"
-          git push origin HEAD:main  # Push to default branch
+          git push origin HEAD:main
