@@ -2,23 +2,37 @@ name: Update Contributors
 
 on:
   workflow_dispatch: # Allows manual triggering
-  issues:
-    types: [closed]
   pull_request:
     types: [closed]
-  push:
-    branches: [main, master]
+  issues:
+    types: [closed]
 
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
-    permissions: # Add write permission
-      contents: write
+    permissions:
+      contents: write # Ensure write access to update files
     steps:
-      - uses: actions/checkout@v4
-      - uses: all-contributors/github-action@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          auto: true
-          configPath: .all-contributorsrc # Corrected property name
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          node-version: 20.x
+
+      - name: Install All Contributors CLI
+        run: npm install -g all-contributors-cli
+
+      - name: Update contributors list
+        run: |
+          all-contributors add ${{ github.actor }} code
+          all-contributors generate # Updates README.md with contributors table
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add CONTRIBUTORS.md .all-contributorsrc
+          git commit -m "docs: update contributors list [skip ci]"
+          git push origin ${{ github.ref }}
