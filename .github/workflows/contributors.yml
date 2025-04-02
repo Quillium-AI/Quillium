@@ -1,5 +1,7 @@
 name: Update Contributors
+
 on:
+  workflow_dispatch: # Allows manual triggering
   issues:
     types: [closed]
   pull_request:
@@ -10,13 +12,13 @@ on:
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
+    permissions: # Add write permission
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: all-contributors/github-action@v2
         with:
-          # Auto-detect contributions from PRs/issues
           auto: true
-          # Configuration file path (default shown)
-          config: .all-contributorsrc
+          configPath: .all-contributorsrc # Corrected property name
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
