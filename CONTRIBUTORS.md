@@ -20,6 +20,7 @@ Thank you to all the people who have contributed to Quillium!
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/HadiCherkaoui"><img src="https://avatars.githubusercontent.com/u/134227113?v=4" width="100px;" alt="Hadi Cherkaoui"/><br /><sub><b>Hadi Cherkaoui</b></sub></a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/dependabot[bot]"><img src="https://avatars.githubusercontent.com/in/29110?v=4" width="100px;" alt="dependabot[bot]"/><br /><sub><b>dependabot[bot]</b></sub></a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Devaughn-glitch"><img src="https://avatars.githubusercontent.com/u/145268880?v=4" width="100px;" alt="Devaughn Lawrence"/><br /><sub><b>Devaughn Lawrence</b></sub></a></td>
     </tr>
   </tbody>
 </table>
