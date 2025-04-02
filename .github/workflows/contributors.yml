@@ -2,7 +2,7 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Daily at midnight
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write  # Required for PR creation [[8]]
 
     steps:
       - name: Checkout repository
@@ -21,19 +22,21 @@ jobs:
           node-version: 16
 
       - name: Install all-contributors-cli
-        run: npm install --save-dev all-contributors-cli@6.18.0  # Explicit version pin [[7]]
+        run: npm install --save-dev all-contributors-cli@6.18.0
 
       - name: Update contributors
-        run: npx all-contributors generate  # Generates CONTRIBUTORS.md [[4]]
+        run: npx all-contributors generate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Commit changes
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add CONTRIBUTORS.md .all-contributorsrc
-          git commit -m "Update contributors" || exit 0  # Graceful handling of no changes [[6]]
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Replace commit/push with PR creation
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "docs(contributers): update list"
+          title: "Update contributors list"
+          body: "Automated contributors update by GitHub Actions"
+          branch: update-contributors  # New branch name
+          base: main  # Target branch
+          author: github-actions <github-actions@github.com>
