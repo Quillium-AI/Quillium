@@ -1,20 +1,25 @@
 name: Update Contributors
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'  # Daily at 12PM UTC
   workflow_dispatch:
 
+permissions:
+  contents: write  # Required for committing changes
+
 jobs:
-  contributors:
+  update-contributors:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-            fetch-depth: 0
-      - uses: JoshuaKGoldberg/all-contributors-auto-action@v0.3.2
-        name: Update contributors
-        env:
+          fetch-depth: 0  # Needed for full git history
+
+      - name: Update contributors
+        uses: all-contributors/all-contributors-bot@v1.0.7
+        with:
           GITHUB_TOKEN: ${{ secrets.PAT }}
+          config-path: .all-contributorsrc  # Explicit path to your config
+          skip-ci: true  # Matches your config
