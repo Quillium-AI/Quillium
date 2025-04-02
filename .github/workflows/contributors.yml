@@ -2,8 +2,8 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   update-contributors:
@@ -24,30 +24,35 @@ jobs:
       - name: Install all-contributors-cli
         run: npm install --no-save all-contributors-cli@6.18.0
 
-      # Ensure configuration exists (modify if needed)
-      - name: Initialize contributors config
+      - name: Identify and add new contributors
         run: |
-            npx all-contributors init --yes
-
-      # Generate contributors file without committing
-      - name: Update CONTRIBUTORS.md
-        run: npx all-contributors generate
+          # Check for new contributors not yet added
+          missing_contributors=$(npx all-contributors check | grep 'Missing contributors:' | sed 's/Missing contributors: //')
+          
+          if [ -n "$missing_contributors" ]; then
+            for contributor in $missing_contributors; do
+              # Add each missing contributor with a default contribution type
+              npx all-contributors add $contributor code
+            done
+            # Generate the updated contributors list
+            npx all-contributors generate
+          else
+            echo "No new contributors to add."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
-      # Create PR with clean changes
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT }}
-          commit-message: "docs(contributors): update list"
+          commit-message: "docs(contributors): update contributors list"
           title: "Update contributors list"
           body: |
-            Automated contributors update by GitHub Actions
-            
+            Automated update of contributors list by GitHub Actions.
+
             **Changes:**
-            - Updated CONTRIBUTORS.md with new contributors
-            - Removed npm artifacts from tracking
+            - Updated CONTRIBUTORS.md with new contributors.
           branch: update-contributors
           base: main
           author: github-actions <github-actions@github.com>
