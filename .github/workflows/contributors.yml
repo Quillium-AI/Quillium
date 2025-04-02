@@ -16,7 +16,5 @@ jobs:
             fetch-depth: 0
       - uses: JoshuaKGoldberg/all-contributors-auto-action@v0.3.2
         name: Update contributors
-        with:
-          token: ${{ secrets.PAT }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
