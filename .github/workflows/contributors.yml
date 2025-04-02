@@ -14,8 +14,9 @@ jobs:
     steps:
       - name: Configure git id
         run: | 
-          git config --global user.email "github-action@github.com"
-          git config --global user.name "GitHub Action [bot]"
+          git config --global user.email "github@hide.cherkaoui.ch"
+          git config --global user.name "Hadi Cherkaoui"
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
