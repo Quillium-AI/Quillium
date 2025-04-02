@@ -1,13 +1,12 @@
 name: Update Contributors
 on:
-  push:
-    branches: [main]
   schedule:
     - cron: '0 12 * * *'  # Daily at 12PM UTC
   workflow_dispatch:
 
 permissions:
-  contents: write  # Required for committing changes
+  contents: write
+  pull-requests: write
 
 jobs:
   update-contributors:
@@ -15,11 +14,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed for full git history
+          fetch-depth: 0
+          ref: main  # Check out the protected branch
 
-      - name: Update contributors
-        uses: all-contributors/all-contributors-bot@v1.0.7
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-          config-path: .all-contributorsrc  # Explicit path to your config
-          skip-ci: true  # Matches your config
+          node-version: '20'
+
+      - name: Install all-contributors-cli
+        run: npm install -g all-contributors-cli
+
+      - name: Generate contributors
+        run: |
+          npx all-contributors check
+          npx all-contributors generate
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: "update-contributors-$(date +%s)"  # Unique branch name
+          commit-message: "docs: Update contributors list"
+          title: "📌 Update contributors list"
+          body: "Automated update of contributors list"
+          base: main  # Target protected branch
+          delete-branch: true  # Clean up after merge
