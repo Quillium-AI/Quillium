@@ -2,8 +2,8 @@ name: Update Contributors
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight
-  workflow_dispatch: # Allows manual triggering
+    - cron: '0 0 * * *' # Daily at midnight
+  workflow_dispatch:
 
 jobs:
   update-contributors:
@@ -20,17 +20,29 @@ jobs:
         with:
           node-version: 16
 
-      - name: Update contributors
-        run: npx all-contributors-cli generate
+      # Install CLI as dev dependency to avoid version conflicts [[7]][[9]]
+      - name: Install all-contributors-cli
+        run: npm install --save-dev all-contributors-cli@6.18.0
+
+      # Initialize configuration if not exists (creates .all-contributorsrc) [[4]][[6]]
+      - name: Initialize configuration
+        run: npx all-contributors init --yes
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
-      - name: Commit changes
+      # Generate contributors list [[2]][[10]]
+      - name: Update contributors
+        run: npx all-contributors generate
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+
+      # Commit changes if needed
+      - name: Commit updates
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add README.md .all-contributorsrc
-          git commit -m "docs(contributers): Auto add contributers" || echo "No changes to commit"
+          git commit -m "Update contributors" || echo "No changes"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
