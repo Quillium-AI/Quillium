@@ -21,22 +21,22 @@ jobs:
         with:
           node-version: 16
 
-      - name: Install all-contributors-cli
-        run: npm install --save-dev all-contributors-cli@6.18.0
+      - name: Install all-contributors-cli (without saving to package.json)
+        run: npm install --no-save all-contributors-cli@6.18.0  # <-- Added --no-save flag [[4]]
 
       - name: Update contributors
         run: npx all-contributors generate
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
-      # Replace commit/push with PR creation
+      # Create PR without npm artifacts
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT }}
-          commit-message: "docs(contributers): update list"
+          commit-message: "docs(contributors): update list"
           title: "Update contributors list"
           body: "Automated contributors update by GitHub Actions"
-          branch: update-contributors  # New branch name
-          base: main  # Target branch
+          branch: update-contributors
+          base: main
           author: github-actions <github-actions@github.com>
