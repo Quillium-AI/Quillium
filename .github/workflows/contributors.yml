@@ -1,58 +1,36 @@
 name: Update Contributors
 
 on:
-  workflow_dispatch:
-  pull_request:
-    types: [closed]
-    branches: [main]
-  push:
-    branches: [main]
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   update-contributors:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Required for complete git history
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 16
 
-      - name: Install All Contributors CLI
-        run: npm install -g all-contributors-cli
+      - name: Update contributors
+        run: npx all-contributors-cli generate
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
 
-      - name: Handle Merged Pull Requests
-        if: github.event.pull_request.merged == true
+      - name: Commit changes
         run: |
-          # Add PR author as contributor
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          all-contributors add "$PR_AUTHOR" code
-          all-contributors generate
-
-      - name: Handle Direct Pushes
-        if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
-        run: |
-          # Get unique commit authors from push
-          COMMIT_AUTHORS=$(git log --pretty=format:'%an <%ae>' ${{ github.event.before }}..${{ github.event.after }} | sort -u)
-          
-          # Add each author using CLI's email lookup
-          while IFS= read -r author; do
-            all-contributors add --email "$author" code
-          done <<< "$COMMIT_AUTHORS"
-          
-          all-contributors generate
-
-      - name: Commit and Push Changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add CONTRIBUTORS.md .all-contributorsrc
-          git commit -m "docs: update contributors list [skip ci]"
-          git push origin HEAD:main
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add README.md .all-contributorsrc
+          git commit -m "docs(contributers): Auto add contributers" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
