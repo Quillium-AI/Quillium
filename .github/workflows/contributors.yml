@@ -33,7 +33,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: "update-contributors-$(date +%s)"  # Unique branch name
+          branch: "update-contributors"  # Unique branch name
           commit-message: "docs: Update contributors list"
           title: "📌 Update contributors list"
           body: "Automated update of contributors list"
