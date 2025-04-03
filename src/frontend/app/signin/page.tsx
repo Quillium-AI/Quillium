@@ -83,7 +83,7 @@ const SignIn: React.FC = () => {
 
       // Redirect to dashboard
       if (response.status === 200) {
-        router.push('/dashboard');
+        router.push('/');
       } else if (response.status === 401) {
         setError(data.message || 'Wrong email or password.');
       } else if (response.status === 500) {

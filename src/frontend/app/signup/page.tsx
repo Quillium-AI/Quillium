@@ -100,7 +100,7 @@ const SignUp: React.FC = () => {
       // Handle different response statuses
       if (response.status === 200 || response.status === 201) {
         // Signup successful
-        router.push('/dashboard');
+        router.push('/');
       } else {
         // Handle specific error cases
         if (response.status === 409) {

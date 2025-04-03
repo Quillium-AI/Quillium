@@ -15,7 +15,7 @@ var dbConn *db.DB
 
 func init() {
 	var err error
-	time.Sleep(10 * time.Second)
+	time.Sleep(15 * time.Second)
 	dbConn, err = db.Initialize()
 	if err != nil {
 		log.Fatal("Failed to initialize database connection:", err)
