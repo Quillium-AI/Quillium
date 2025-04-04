@@ -1,6 +1,7 @@
 module github.com/Quillium-AI/Quillium/src/backend
 
 go 1.24.1
+
 require github.com/gorilla/websocket v1.5.3
 
 require (
@@ -17,8 +18,8 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/openai/openai-go v0.1.0-beta.5
-	golang.org/x/crypto v0.35.0
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	github.com/openai/openai-go v0.1.0-beta.6
+	golang.org/x/crypto v0.36.0
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 )
