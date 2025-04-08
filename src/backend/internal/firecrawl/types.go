@@ -7,7 +7,7 @@ type SearchParams struct {
 	Lang          string        `json:"lang"`
 	Country       string        `json:"country"`
 	Timeout       int           `json:"timeout,omitempty"`
-	ScrapeOptions ScrapeOptions `json:"scrapeOptions"`
+	ScrapeOptions *ScrapeOptions `json:"scrapeOptions"`
 }
 
 // ScrapeOptions represents options for scraping content

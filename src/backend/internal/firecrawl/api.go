@@ -13,7 +13,7 @@ import (
 
 // SearchFirecrawl performs a search using the Firecrawl API
 // If excludeWikipedia is true, the search will exclude results from Wikipedia
-func SearchFirecrawl(api_key string, base_url string, query string, excludeWikipedia bool) (*SearchResponse, error) {
+func SearchFirecrawl(api_key string, base_url string, query string, excludeWikipedia bool, enableMarkdown bool, limit int) (*SearchResponse, error) {
 	// Modify query to exclude Wikipedia if requested
 	if excludeWikipedia && !strings.Contains(query, "-site:wikipedia.org") {
 		query = query + " -site:wikipedia.org"
@@ -22,13 +22,16 @@ func SearchFirecrawl(api_key string, base_url string, query string, excludeWikip
 	// Create search parameters
 	params := SearchParams{
 		Query:   query,
-		Limit:   5,
+		Limit:   limit,
 		Lang:    "en",
 		Country: "us",
 		Timeout: 60000, // 60 seconds as per documentation
-		ScrapeOptions: ScrapeOptions{
+	}
+
+	if enableMarkdown {
+		params.ScrapeOptions = &ScrapeOptions{
 			Formats: []string{"markdown"},
-		},
+		}
 	}
 
 	// Convert params to JSON for the request body
