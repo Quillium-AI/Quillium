@@ -13,11 +13,11 @@ import (
 
 // ChatResponse represents the structured response from the Chat function
 type ChatResponse struct {
-	Content         string
+	Content          string
 	RelatedQuestions *chats.RelatedQuestions
 }
 
-func Chat(model string, api_key string, base_url string, query string, firecrawl_results []string) ChatResponse {
+func Chat(model string, api_key string, base_url string, query string, firecrawl_results []string) (ChatResponse, error) {
 	client := openai.NewClient(
 		option.WithAPIKey(api_key),
 		option.WithBaseURL(base_url),
@@ -50,7 +50,8 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 		Model: model,
 	})
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Printf("Error calling OpenAI API: %v", err)
+		return ChatResponse{}, err
 	}
 
 	// Get the raw content from the AI response
@@ -60,7 +61,7 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 	cleanedContent, relatedQuestions := ExtractRelatedQuestions(rawContent)
 
 	return ChatResponse{
-		Content:         cleanedContent,
+		Content:          cleanedContent,
 		RelatedQuestions: relatedQuestions,
-	}
+	}, nil
 }

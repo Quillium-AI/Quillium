@@ -35,23 +35,26 @@ type ChatMessage struct {
 
 // ChatRequest represents a request to start or continue a chat
 type ChatRequest struct {
-	ChatID   string          `json:"chatId,omitempty"`
+	ChatID   string          `json:"chatId"`
 	Messages []chats.Message `json:"messages"`
-	Options  ChatOptions     `json:"options,omitempty"`
+	Options  ChatOptions     `json:"options"`
 }
 
 // ChatOptions represents options for a chat request
 type ChatOptions struct {
-	Model       string  `json:"model,omitempty"`
-	Temperature float64 `json:"temperature,omitempty"`
-	MaxTokens   int     `json:"maxTokens,omitempty"`
+	QualityProfile   string  `json:"qualityProfile"`
+	Temperature      float64 `json:"temperature"`
+	MaxTokens        int     `json:"maxTokens"`
+	DisableStreaming bool    `json:"disableStreaming"`
 }
 
 // ChatResponse represents a response from the AI
 type ChatResponse struct {
-	ChatID  string        `json:"chatId"`
-	Message chats.Message `json:"message"`
-	Done    bool          `json:"done"`
+	ChatID           string                  `json:"chatId"`
+	Message          chats.Message           `json:"message"`
+	Done             bool                    `json:"done"`
+	Sources          []chats.Source          `json:"sources"`
+	RelatedQuestions *chats.RelatedQuestions `json:"relatedQuestions"`
 }
 
 // ChatStreamResponse represents a streaming response from the AI

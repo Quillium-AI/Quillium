@@ -2,7 +2,14 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+
+	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/firecrawl"
+	llmproviders "github.com/Quillium-AI/Quillium/src/backend/internal/llm_providers"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
 )
 
 // MessageTypes for WebSocket communication
@@ -57,16 +64,200 @@ func handleChatRequest(client *Client, content interface{}) {
 	go processChatRequest(client, chatReq)
 }
 
-// processChatRequest handles the actual processing of the chat request
-// This is a dummy implementation that would normally call an AI service
-func processChatRequest(client *Client, req ChatRequest) {
-	// Check if this should be a streaming response
-	streaming := true
+// generateChatTitle creates a title for a new chat based on the first user message
+func generateChatTitle(firstMessage string) string {
+	// Truncate the message if it's too long
+	if len(firstMessage) > 50 {
+		return firstMessage[:47] + "..."
+	}
+	return firstMessage
+}
 
-	if streaming {
-		// Simulate streaming response
+// processChatRequest handles the actual processing of the chat request
+func processChatRequest(client *Client, req ChatRequest) {
+	// Get the database connection
+	dbConn, err := db.Initialize()
+	if err != nil {
+		log.Printf("Error initializing database: %v", err)
+		sendErrorResponse(client, "Internal server error: database connection failed")
+		return
+	}
+	defer dbConn.Close()
+
+	// Get admin settings for API keys
+	adminSettings, err := dbConn.GetAdminSettings()
+	if err != nil {
+		log.Printf("Error getting admin settings: %v", err)
+		sendErrorResponse(client, "Internal server error: could not get admin settings")
+		return
+	}
+
+	// Get the latest user message
+	if len(req.Messages) == 0 {
+		sendErrorResponse(client, "No messages provided")
+		return
+	}
+
+	// Determine the message number for this conversation
+	msgNum := len(req.Messages) / 2 // Each exchange has a user message and an assistant message
+
+	// Get the user's query (the last message in the array)
+	userMessage := req.Messages[len(req.Messages)-1]
+	if userMessage.Role != "user" {
+		sendErrorResponse(client, "Last message must be from user")
+		return
+	}
+
+	// Update the user message with the message number
+	userMessage.MsgNum = msgNum
+
+	// Check if streaming is enabled in the options
+	streaming := true // Default to streaming
+	if req.Options.DisableStreaming {
+		streaming = false
+	}
+
+	// Prepare chat history for the AI (excluding Firecrawl data)
+	var chatHistory []chats.Message
+	for i := 0; i < len(req.Messages)-1; i++ {
+		chatHistory = append(chatHistory, req.Messages[i])
+	}
+
+	// Search Firecrawl for relevant information
+	var firecrawlResults []string
+	var sources []chats.Source
+
+	// Decrypt API keys if needed
+	firecrawlAPIKey, _ := security.DecryptPassword(adminSettings.FirecrawlAPIKey_encrypt)
+	openAIAPIKey, _ := security.DecryptPassword(adminSettings.OpenAIAPIKey_encrypt)
+
+	// Determine search parameters based on quality profile
+	qualityProfile := "balanced" // Default to balanced profile
+	if req.Options.QualityProfile != "" {
+		qualityProfile = req.Options.QualityProfile
+	}
+
+	// Set search parameters based on quality profile
+	var enableMarkdown bool
+	var resultLimit int
+	switch qualityProfile {
+	case "speed":
+		enableMarkdown = false
+		resultLimit = 10
+	case "quality":
+		enableMarkdown = true
+		resultLimit = 10
+	default: // balanced
+		enableMarkdown = true
+		resultLimit = 5
+	}
+
+	// Search Firecrawl for the current query
+	firecrawlResp, err := firecrawl.SearchFirecrawl(
+		*firecrawlAPIKey,
+		adminSettings.FirecrawlBaseURL,
+		userMessage.Content,
+		true, // Exclude Wikipedia
+		enableMarkdown,
+		resultLimit,
+	)
+
+	if err != nil {
+		log.Printf("Error searching Firecrawl: %v", err)
+		// Continue without Firecrawl results
 	} else {
-		// Simulate non-streaming response
+		// Parse the Firecrawl results
+		parsedSources, formattedResults := firecrawl.ParseSearchResults(firecrawlResp, msgNum)
+		sources = parsedSources
+		firecrawlResults = formattedResults
+	}
+
+	// Select the appropriate model based on the quality profile
+	var model string
+	switch qualityProfile {
+	case "speed":
+		model = adminSettings.LLMProfileSpeed
+	case "quality":
+		model = adminSettings.LLMProfileQuality
+	default: // balanced
+		model = adminSettings.LLMProfileBalanced
+	}
+
+	// Call the AI service
+	aiResponse, err := llmproviders.Chat(
+		model,
+		*openAIAPIKey,
+		adminSettings.OpenAIBaseURL,
+		userMessage.Content,
+		firecrawlResults,
+	)
+	if err != nil {
+		log.Printf("Error calling AI service: %v", err)
+		sendErrorResponse(client, "Error generating AI response")
+		return
+	}
+
+	// Create the assistant message
+	assistantMessage := chats.Message{
+		Role:    "assistant",
+		Content: aiResponse.Content,
+		MsgNum:  msgNum,
+	}
+
+	// Prepare the chat content for saving
+	allMessages := append(chatHistory, userMessage, assistantMessage)
+
+	// Create or update the chat content
+	chatContent := &chats.ChatContent{
+		Title:    generateChatTitle(userMessage.Content),
+		Messages: allMessages,
+		Sources:  sources,
+	}
+
+	// Add related questions if available
+	if aiResponse.RelatedQuestions != nil {
+		aiResponse.RelatedQuestions.MsgNum = msgNum
+		chatContent.RelatedQuestions = aiResponse.RelatedQuestions
+	}
+
+	// Save the chat content to the database
+	if req.ChatID == "" {
+		// Create a new chat
+		err = dbConn.CreateChat(client.userID, chatContent)
+		if err != nil {
+			log.Printf("Error creating chat: %v", err)
+			// Continue without saving
+		}
+	} else {
+		// Update existing chat
+		chatID := 0
+		_, err = fmt.Sscanf(req.ChatID, "%d", &chatID)
+		if err != nil {
+			log.Printf("Error parsing chat ID: %v", err)
+			// Continue without saving
+		} else {
+			err = dbConn.UpdateChatContent(chatID, chatContent)
+			if err != nil {
+				log.Printf("Error updating chat: %v", err)
+				// Continue without saving
+			}
+		}
+	}
+
+	// Send the response to the client
+	if streaming {
+		// Stream the response
+		StreamResponseToClient(client, req.ChatID, assistantMessage.Content)
+	} else {
+		// Send the complete response
+		response := ChatResponse{
+			ChatID:           req.ChatID,
+			Message:          assistantMessage,
+			Done:             true,
+			Sources:          sources,
+			RelatedQuestions: chatContent.RelatedQuestions,
+		}
+		sendChatResponse(client, response)
 	}
 }
 
