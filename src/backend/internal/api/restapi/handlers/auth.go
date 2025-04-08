@@ -68,7 +68,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   r.TLS != nil, // Set to true in production with HTTPS
+		Secure:   false, // For local development
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(24 * time.Hour.Seconds()),
 	})
@@ -91,8 +91,8 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		MaxAge:   -1, // Delete the cookie
+		Secure:   false, // For local development
+		MaxAge:   -1,    // Delete the cookie
 	})
 
 	w.Header().Set("Content-Type", "application/json")
@@ -171,7 +171,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   r.TLS != nil, // Set to true in production with HTTPS
+		Secure:   false, // For local development
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(24 * time.Hour.Seconds()),
 	})

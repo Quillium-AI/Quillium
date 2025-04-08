@@ -100,23 +100,32 @@ func DeleteChat(chatID string) error {
 }
 
 // StreamResponseToClient streams a response to the client
-func StreamResponseToClient(client *Client, chatID string, content string) {
+func StreamResponseToClient(client *Client, chatID string, content string, sources []chats.Source, relatedQuestions *chats.RelatedQuestions) {
 	// Split the content into chunks
-	chunks := splitIntoChunks(content, 10)
+	chunks := splitIntoChunks(content, 50)
 
 	for i, chunk := range chunks {
+		isFinalChunk := i == len(chunks)-1
+		
 		// Create a streaming response
 		streamResp := ChatStreamResponse{
 			ChatID:  chatID,
 			Content: chunk,
-			Done:    i == len(chunks)-1,
+			Done:    isFinalChunk,
+		}
+		
+		// Only include sources and related questions in the final chunk
+		if isFinalChunk {
+			streamResp.Sources = sources
+			streamResp.RelatedQuestions = relatedQuestions
 		}
 
 		// Send the streaming response
 		sendChatStreamResponse(client, streamResp)
 
-		// Simulate processing time
-		time.Sleep(50 * time.Millisecond)
+		// Add a small delay between chunks to simulate natural typing speed
+		// 20ms provides a good balance between responsiveness and readability
+		time.Sleep(20 * time.Millisecond)
 	}
 }
 

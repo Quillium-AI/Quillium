@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api/ws"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
 )
@@ -31,9 +32,16 @@ func (s *Server) Start() error {
 	// Setup REST API routes
 	restapi.SetupRoutes(s.HttpMux)
 
-	// Setup WebSocket handler
+	// Setup WebSocket handler with proper middleware chain
 	s.HttpMux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws.ServeWs(s.WSHub, w, r)
+		// Apply Auth middleware first
+		middleware.WithAuth(middleware.AuthTypeFrontend, func(w http.ResponseWriter, r *http.Request) {
+			// Then apply CORS
+			middleware.WithCORSType(middleware.CORSTypeLocal, func(w http.ResponseWriter, r *http.Request) {
+				// Finally handle the WebSocket connection
+				ws.ServeWs(s.WSHub, w, r)
+			})(w, r)
+		})(w, r)
 	})
 
 	log.Printf("Server starting on %s", s.Addr)

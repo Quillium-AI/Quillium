@@ -151,7 +151,7 @@ func TestUpdateAdminSettings(t *testing.T) {
 			userID:  adminUserID,
 			isAdmin: true,
 			updates: map[string]interface{}{
-				"enable_sign_ups": false,
+				"enable_sign_ups":   false,
 				"llm_profile_speed": "gpt-4",
 			},
 			expectCode: http.StatusOK,
@@ -193,7 +193,7 @@ func TestUpdateAdminSettings(t *testing.T) {
 				if val, ok := tc.updates["enable_sign_ups"]; ok {
 					expected := val.(bool)
 					if adminSettings.EnableSignUps != expected {
-						t.Errorf("Expected EnableSignUps to be %v, got %v", 
+						t.Errorf("Expected EnableSignUps to be %v, got %v",
 							expected, adminSettings.EnableSignUps)
 					}
 				}
@@ -202,7 +202,7 @@ func TestUpdateAdminSettings(t *testing.T) {
 				if val, ok := tc.updates["llm_profile_speed"]; ok {
 					expected := val.(string)
 					if adminSettings.LLMProfileSpeed != expected {
-						t.Errorf("Expected LLMProfileSpeed to be %s, got %s", 
+						t.Errorf("Expected LLMProfileSpeed to be %s, got %s",
 							expected, adminSettings.LLMProfileSpeed)
 					}
 				}
@@ -254,7 +254,7 @@ func TestUpdateUserSettings(t *testing.T) {
 	}
 
 	if updatedSettings.IsDarkMode != userSettings.IsDarkMode {
-		t.Errorf("Expected IsDarkMode %v, got %v", 
+		t.Errorf("Expected IsDarkMode %v, got %v",
 			userSettings.IsDarkMode, updatedSettings.IsDarkMode)
 	}
 }

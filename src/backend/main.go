@@ -7,6 +7,7 @@ import (
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/initialization"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
 )
@@ -59,7 +60,14 @@ func init() {
 	} else {
 		log.Println("Admin user already exists. Skipping creation.")
 	}
+
+	// Initialize or update admin settings with environment variables
+	err = initialization.InitializeAdminSettings(dbConn)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize admin settings: %v", err)
+	}
 }
+
 
 func main() {
 	log.Println("Starting backend...")

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"os"
@@ -160,13 +161,19 @@ func (d *DB) CreateChat(userId int, chatContent *chats.ChatContent) error {
 		return errors.New("failed to convert chat content to JSON: " + err.Error())
 	}
 
+	// Extract sources from chatContent and convert to JSON
+	sourcesJSON, err := json.Marshal(chatContent.Sources)
+	if err != nil {
+		return errors.New("failed to convert sources to JSON: " + err.Error())
+	}
+
 	query := `
-		INSERT INTO chat_contents (user_id, content)
-		VALUES ($1, $2)
+		INSERT INTO chat_contents (user_id, content, sources)
+		VALUES ($1, $2, $3)
 		RETURNING id
 	`
 	var id int
-	err = d.Conn.QueryRow(context.Background(), query, userId, jsonStr).Scan(&id)
+	err = d.Conn.QueryRow(context.Background(), query, userId, jsonStr, sourcesJSON).Scan(&id)
 	if err != nil {
 		return errors.New("failed to create chat: " + err.Error())
 	}

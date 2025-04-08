@@ -37,6 +37,7 @@ type ChatMessage struct {
 type ChatRequest struct {
 	ChatID   string          `json:"chatId"`
 	Messages []chats.Message `json:"messages"`
+	Message  string          `json:"message"`  // For backward compatibility with frontend
 	Options  ChatOptions     `json:"options"`
 }
 
@@ -59,9 +60,11 @@ type ChatResponse struct {
 
 // ChatStreamResponse represents a streaming response from the AI
 type ChatStreamResponse struct {
-	ChatID  string `json:"chatId"`
-	Content string `json:"content"`
-	Done    bool   `json:"done"`
+	ChatID           string                 `json:"chatId"`
+	Content          string                 `json:"content"`
+	Done             bool                   `json:"done"`
+	Sources          []chats.Source         `json:"sources,omitempty"`
+	RelatedQuestions *chats.RelatedQuestions `json:"relatedQuestions,omitempty"`
 }
 
 // ErrorResponse represents an error response

@@ -17,6 +17,14 @@ services:
       - ENCRYPTION_KEY=thisisaverylongkeythatwecanuseen # Used for encryption and decryption MUST BE 32 CHARACTERS LONG!!
       - JWT_SECRET=quillium-dev-secret-key
       - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - FIRECRAWL_BASE_URL=https://api.firecrawl.dev
+      - OPENAI_BASE_URL=https://api.openai.com
+      - FIRECRAWL_API_KEY=your_api_key_here
+      - OPENAI_API_KEY=your_api_key_here
+      - LLM_PROFILE_SPEED=gpt-3.5-turbo
+      - LLM_PROFILE_BALANCED=gpt-4o
+      - LLM_PROFILE_QUALITY=gpt-4o
+      - ENABLE_SIGNUPS=true
     depends_on:
       - postgres
 
