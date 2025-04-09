@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
@@ -133,11 +134,8 @@ func processChatRequest(client *Client, req ChatRequest) {
 	// Update the user message with the message number
 	userMessage.MsgNum = msgNum
 
-	// Check if streaming is enabled in the options
-	streaming := true // Default to streaming
-	if req.Options.DisableStreaming {
-		streaming = false
-	}
+	// We'll always stream the response now
+	// The DisableStreaming option is ignored
 
 	// Prepare chat history for the AI (excluding Firecrawl data)
 	var chatHistory []chats.Message
@@ -231,23 +229,94 @@ func processChatRequest(client *Client, req ChatRequest) {
 		model = adminSettings.LLMProfileBalanced
 	}
 
-	// Call the AI service
-	log.Printf("Making OpenAI request to %s with model: %s", adminSettings.OpenAIBaseURL, model)
+	// Call the AI service with streaming
+	log.Printf("Making OpenAI streaming request to %s with model: %s", adminSettings.OpenAIBaseURL, model)
 
-	aiResponse, err := llmproviders.Chat(
-		model,
-		*openAIAPIKey,
-		adminSettings.OpenAIBaseURL,
-		userMessage.Content,
-		firecrawlResults,
-	)
-	if err != nil {
-		log.Printf("Error calling AI service: %v", err)
-		sendErrorResponse(client, "Error generating AI response")
-		return
+	// Create a channel to receive the final response
+	responseChan := make(chan llmproviders.ChatResponse, 1)
+	// Create a channel to signal when streaming is done
+	doneChan := make(chan bool, 1)
+
+	// We don't need to store the full content anymore - direct streaming only
+
+	// Define the streaming callback function
+	streamCallback := func(streamResp llmproviders.StreamResponse) {
+		// Check for errors
+		if streamResp.Error != nil {
+			log.Printf("Error in stream: %v", streamResp.Error)
+			sendErrorResponse(client, fmt.Sprintf("Error in stream: %v", streamResp.Error))
+			doneChan <- true
+			return
+		}
+
+		// If this is the final chunk with related questions
+		if streamResp.Done {
+			// Minimal logging for final response
+			log.Printf("Sending final response with %d sources", len(sources))
+
+			// Send the final chunk with related questions
+			sendChatStreamResponse(client, ChatStreamResponse{
+				ChatID:           req.ChatID,
+				Content:          "",
+				Done:             true,
+				Sources:          sources,
+				RelatedQuestions: streamResp.RelatedQuestions,
+			})
+
+			// Signal that streaming is done
+			doneChan <- true
+			return
+		}
+
+		// No need to accumulate content anymore - direct streaming only
+
+		// Send the chunk to the client
+		sendChatStreamResponse(client, ChatStreamResponse{
+			ChatID:  req.ChatID,
+			Content: streamResp.Content,
+			Done:    false,
+		})
 	}
 
-	log.Printf("OpenAI response successful, content length: %d", len(aiResponse.Content))
+	// Start the streaming request in a goroutine
+	go func() {
+		aiResponse, err := llmproviders.Chat(
+			model,
+			*openAIAPIKey,
+			adminSettings.OpenAIBaseURL,
+			userMessage.Content,
+			firecrawlResults,
+			sources,
+			streamCallback,
+		)
+		if err != nil {
+			log.Printf("Error calling AI service: %v", err)
+			sendErrorResponse(client, "Error generating AI response")
+			doneChan <- true
+			return
+		}
+		responseChan <- aiResponse
+	}()
+
+	// Wait for streaming to complete - this just waits for the doneChan signal
+	// which is sent when the final chunk with related questions is processed
+	<-doneChan
+
+	// Get the final response - we don't need to wait for this since we've already
+	// streamed all the content directly to the frontend
+	var aiResponse llmproviders.ChatResponse
+	select {
+	case aiResponse = <-responseChan:
+		log.Printf("OpenAI response successful")
+	default:
+		// If we don't get a response immediately, use an empty response
+		// This should never happen with direct streaming, but we keep it as a fallback
+		log.Printf("Using fallback response")
+		aiResponse = llmproviders.ChatResponse{
+			Content:          "Sorry, I couldn't generate a response at this time.",
+			RelatedQuestions: nil,
+		}
+	}
 
 	// Create the assistant message
 	assistantMessage := chats.Message{
@@ -299,21 +368,8 @@ func processChatRequest(client *Client, req ChatRequest) {
 		}
 	}
 
-	// Send the response to the client
-	if streaming {
-		// Stream the response
-		StreamResponseToClient(client, req.ChatID, assistantMessage.Content, sources, chatContent.RelatedQuestions)
-	} else {
-		// Send the complete response
-		response := ChatResponse{
-			ChatID:           req.ChatID,
-			Message:          assistantMessage,
-			Done:             true,
-			Sources:          sources,
-			RelatedQuestions: chatContent.RelatedQuestions,
-		}
-		sendChatResponse(client, response)
-	}
+	// We've already streamed the response, so we don't need to do anything else here
+	// The response has already been sent to the client through the streaming callback
 }
 
 // splitIntoChunks splits a string into chunks of approximately the given size
@@ -349,7 +405,22 @@ func sendChatStreamResponse(client *Client, resp ChatStreamResponse) {
 		Content: resp,
 	}
 
+	// Minimal logging for final message
+	if resp.Done && (len(resp.Sources) > 0 || resp.RelatedQuestions != nil) {
+		log.Printf("Final message - Sources: %d, RelatedQuestions: %v", len(resp.Sources), resp.RelatedQuestions != nil)
+	}
+
 	sendJSONMessage(client, msg)
+}
+
+// Helper function to log JSON objects
+func logJSON(label string, obj interface{}) {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		log.Printf("Error marshaling %s: %v", label, err)
+		return
+	}
+	log.Printf("%s: %s", label, string(data))
 }
 
 // sendErrorResponse sends an error response to the client
@@ -370,5 +441,7 @@ func sendJSONMessage(client *Client, msg interface{}) {
 		return
 	}
 
+	// Add a small delay to prevent message batching
+	time.Sleep(time.Millisecond * 10)
 	client.send <- jsonData
 }

@@ -46,17 +46,12 @@ func SearchFirecrawl(api_key string, base_url string, query string, excludeWikip
 	}
 
 	client := &http.Client{
-		Timeout: 30 * time.Second, // Client timeout for the HTTP request
+		Timeout: 65 * time.Second, // Client timeout for the HTTP request (slightly longer than the API timeout)
 	}
 
 	// Create the request
 	// Check if the base_url already contains /v1 to avoid duplication
-	reqURL := ""
-	if strings.HasSuffix(apiEndpoint, "/v1") {
-		reqURL = fmt.Sprintf("%s/search", apiEndpoint)
-	} else {
-		reqURL = fmt.Sprintf("%s/v1/search", apiEndpoint)
-	}
+	reqURL := fmt.Sprintf("%s/search", apiEndpoint)
 
 	// Create a new request
 	req, err := http.NewRequest("POST", reqURL, bytes.NewBuffer(jsonData))

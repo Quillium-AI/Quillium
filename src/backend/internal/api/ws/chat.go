@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
 )
@@ -100,33 +99,28 @@ func DeleteChat(chatID string) error {
 }
 
 // StreamResponseToClient streams a response to the client
-func StreamResponseToClient(client *Client, chatID string, content string, sources []chats.Source, relatedQuestions *chats.RelatedQuestions) {
-	// Split the content into chunks
-	chunks := splitIntoChunks(content, 50)
-
-	for i, chunk := range chunks {
-		isFinalChunk := i == len(chunks)-1
-		
-		// Create a streaming response
-		streamResp := ChatStreamResponse{
-			ChatID:  chatID,
-			Content: chunk,
-			Done:    isFinalChunk,
-		}
-		
-		// Only include sources and related questions in the final chunk
-		if isFinalChunk {
-			streamResp.Sources = sources
-			streamResp.RelatedQuestions = relatedQuestions
-		}
-
-		// Send the streaming response
-		sendChatStreamResponse(client, streamResp)
-
-		// Add a small delay between chunks to simulate natural typing speed
-		// 20ms provides a good balance between responsiveness and readability
-		time.Sleep(20 * time.Millisecond)
+func StreamResponseToClient(client *Client, chatID string, content string, done bool) {
+	// Minimal logging for streaming response
+	if done {
+		log.Printf("Completed streaming response")
 	}
+	streamResp := ChatStreamResponse{
+		ChatID:  chatID,
+		Content: content,
+		Done:    done,
+	}
+
+	sendChatStreamResponse(client, streamResp)
+}
+
+// SendFinalResponse sends sources and related questions after streaming completes
+func SendFinalResponse(client *Client, chatID string, sources []chats.Source, relatedQuestions *chats.RelatedQuestions) {
+	finalResp := ChatStreamResponse{
+		ChatID:           chatID,
+		Sources:          sources,
+		RelatedQuestions: relatedQuestions,
+	}
+	sendChatStreamResponse(client, finalResp)
 }
 
 // SendResponseToClient sends a complete response to the client
@@ -145,14 +139,18 @@ func RegisterChatHandlers() {
 	// For now, we're handling everything in the HandleMessage function
 }
 
-// serializeChat serializes a chat session to JSON
-func serializeChat(session *ChatSession) ([]byte, error) {
-	return json.Marshal(session)
+// WebSocketMessage defines the structure of messages sent over WebSocket
+type WebSocketMessage struct {
+	Type    string      `json:"type"`
+	Content interface{} `json:"content"`
 }
 
-// deserializeChat deserializes a chat session from JSON
-func deserializeChat(data []byte) (*ChatSession, error) {
-	var session ChatSession
-	err := json.Unmarshal(data, &session)
-	return &session, err
+// Debug function to log the content of a WebSocketMessage
+func logWebSocketMessage(msg WebSocketMessage) {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Error marshaling WebSocketMessage for debug: %v", err)
+		return
+	}
+	log.Printf("WebSocketMessage: %s", string(data))
 }

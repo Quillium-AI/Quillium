@@ -47,32 +47,40 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('WebSocket connected');
+          // Minimal logging
           setIsConnected(true);
         };
 
         ws.onclose = () => {
-          console.log('WebSocket disconnected');
           setIsConnected(false);
           // Try to reconnect after a delay
           setTimeout(connectWebSocket, 3000);
         };
 
-        ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ws.onerror = (_error) => {
+          // Error handling without logging
         };
 
         ws.onmessage = (event) => {
           try {
-            const data = JSON.parse(event.data) as WebSocketMessage;
-            console.log('Received message:', data);
+            // Trim any extra characters that might cause parsing issues
+            const trimmedData = String(event.data).trim();
+            
+            // Skip empty messages
+            if (!trimmedData) return;
+            
+            const data = JSON.parse(trimmedData) as WebSocketMessage;
+            // Set the message without any logging
             setLastMessage(data);
-          } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (_error) {
+            // Silent error handling - no logging
           }
         };
-      } catch (error) {
-        console.error('Error connecting to WebSocket:', error);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
+        // Error handling without logging
         // Try to reconnect after a delay
         setTimeout(connectWebSocket, 3000);
       }
@@ -90,9 +98,18 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   const sendMessage = (message: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      // Debug what we're sending
+      console.log('Sending WebSocket message:', message);
+      
+      // Check if messages array is being sent correctly
+      if (message.type === 'chat_request') {
+        console.log('Messages array:', message.content.messages);
+      }
+      
       wsRef.current.send(JSON.stringify(message));
     } else {
-      console.error('WebSocket not connected');
+      // WebSocket not connected - no logging
+      console.warn('WebSocket not connected when trying to send message');
     }
   };
 
