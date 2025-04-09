@@ -10,21 +10,8 @@ services:
     ports:
       - "8080:8080"
       - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://quillium:quillium_password@postgres:5432/quillium_db
-      - ADMIN_EMAIL=quillium@quillium.dev
-      - ADMIN_PASSWORD=quillium_password
-      - ENCRYPTION_KEY=thisisaverylongkeythatwecanuseen # Used for encryption and decryption MUST BE 32 CHARACTERS LONG!!
-      - JWT_SECRET=quillium-dev-secret-key
-      - NEXT_PUBLIC_API_URL=http://localhost:8080
-      - FIRECRAWL_BASE_URL=https://api.firecrawl.dev
-      - OPENAI_BASE_URL=https://api.openai.com
-      - FIRECRAWL_API_KEY=your_api_key_here
-      - OPENAI_API_KEY=your_api_key_here
-      - LLM_PROFILE_SPEED=gpt-3.5-turbo
-      - LLM_PROFILE_BALANCED=gpt-4o
-      - LLM_PROFILE_QUALITY=gpt-4o
-      - ENABLE_SIGNUPS=true
+    env_file:
+      - .env
     depends_on:
       - postgres
 
@@ -34,13 +21,11 @@ services:
       - "5432:5432"
     volumes:
       - ./data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=quillium
-      - POSTGRES_PASSWORD=quillium_password
-      - POSTGRES_DB=quillium_db
+    env_file:
+      - .env
     restart: unless-stopped
 
-	pgadmin:
+  pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:

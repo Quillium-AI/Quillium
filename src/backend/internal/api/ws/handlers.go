@@ -43,7 +43,7 @@ func HandleMessage(hub *Hub, client *Client, data []byte) {
 // handleChatRequest processes a chat request
 func handleChatRequest(client *Client, content interface{}) {
 	log.Printf("handleChatRequest: Starting to process chat request")
-	
+
 	// Convert content to JSON and then to ChatRequest
 	contentJSON, err := json.Marshal(content)
 	if err != nil {
@@ -80,7 +80,7 @@ func generateChatTitle(firstMessage string) string {
 // processChatRequest handles the actual processing of the chat request
 func processChatRequest(client *Client, req ChatRequest) {
 	log.Printf("processChatRequest: Starting to process chat request")
-	
+
 	// Get the database connection
 	log.Printf("processChatRequest: Initializing database connection")
 	dbConn, err := db.Initialize()
@@ -278,7 +278,8 @@ func processChatRequest(client *Client, req ChatRequest) {
 		err = dbConn.CreateChat(client.userID, chatContent)
 		if err != nil {
 			log.Printf("Error creating chat: %v", err)
-			// Continue without saving
+			sendErrorResponse(client, "Error creating chat")
+			return
 		}
 	} else {
 		// Update existing chat
@@ -286,12 +287,14 @@ func processChatRequest(client *Client, req ChatRequest) {
 		_, err = fmt.Sscanf(req.ChatID, "%d", &chatID)
 		if err != nil {
 			log.Printf("Error parsing chat ID: %v", err)
-			// Continue without saving
+			sendErrorResponse(client, "Error parsing chat ID")
+			return
 		} else {
 			err = dbConn.UpdateChatContent(chatID, chatContent)
 			if err != nil {
 				log.Printf("Error updating chat: %v", err)
-				// Continue without saving
+				sendErrorResponse(client, "Error updating chat")
+				return
 			}
 		}
 	}

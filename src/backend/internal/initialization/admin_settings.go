@@ -20,7 +20,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	// If no settings exist or there was an error, create default settings
 	if err != nil {
 		log.Println("No admin settings found. Creating default settings...")
-		
+
 		// Create default settings
 		adminSettings = &settings.AdminSettings{
 			FirecrawlBaseURL:   "https://api.firecrawl.dev",

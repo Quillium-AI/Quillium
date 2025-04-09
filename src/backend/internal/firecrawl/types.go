@@ -2,12 +2,12 @@ package firecrawl
 
 // SearchParams represents the parameters for a search request
 type SearchParams struct {
-	Query         string        `json:"query"`
-	Limit         int           `json:"limit"`
-	Lang          string        `json:"lang"`
-	Country       string        `json:"country"`
-	Timeout       int           `json:"timeout,omitempty"`
-	ScrapeOptions *ScrapeOptions `json:"scrapeOptions"`
+	Query         string         `json:"query"`
+	Limit         int            `json:"limit"`
+	Lang          string         `json:"lang"`
+	Country       string         `json:"country"`
+	Timeout       int            `json:"timeout,omitempty"`
+	ScrapeOptions *ScrapeOptions `json:"scrapeOptions,omitempty"`
 }
 
 // ScrapeOptions represents options for scraping content

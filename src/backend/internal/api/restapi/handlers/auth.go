@@ -5,6 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"os"
+
+	"strconv"
+
 	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
@@ -12,6 +16,7 @@ import (
 )
 
 var dbConn *db.DB
+var httpsEnabled, _ = strconv.ParseBool(os.Getenv("HTTPS_SECURE"))
 
 // InitHandlers initializes the handlers with a database connection
 func InitHandlers(db *db.DB) {
@@ -68,7 +73,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // For local development
+		Secure:   httpsEnabled,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(24 * time.Hour.Seconds()),
 	})
@@ -91,8 +96,8 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // For local development
-		MaxAge:   -1,    // Delete the cookie
+		Secure:   httpsEnabled,
+		MaxAge:   -1, // Delete the cookie
 	})
 
 	w.Header().Set("Content-Type", "application/json")
@@ -171,7 +176,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // For local development
+		Secure:   httpsEnabled,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(24 * time.Hour.Seconds()),
 	})

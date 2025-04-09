@@ -2,7 +2,6 @@ package firecrawl
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -46,19 +45,13 @@ func SearchFirecrawl(api_key string, base_url string, query string, excludeWikip
 		apiEndpoint = "https://api.firecrawl.dev"
 	}
 
-	// Create HTTP client with timeout and TLS config that skips verification
-	// Note: In production, you should validate certificates properly
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
 	client := &http.Client{
-		Timeout:   30 * time.Second, // Client timeout for the HTTP request
-		Transport: transport,
+		Timeout: 30 * time.Second, // Client timeout for the HTTP request
 	}
 
 	// Create the request
 	// Check if the base_url already contains /v1 to avoid duplication
-	reqURL := "";
+	reqURL := ""
 	if strings.HasSuffix(apiEndpoint, "/v1") {
 		reqURL = fmt.Sprintf("%s/search", apiEndpoint)
 	} else {
