@@ -115,10 +115,6 @@ func validateAPIKey(apiKey string) (bool, int) {
 		return false, -1
 	}
 
-	// The issue is that we can't directly compare encrypted API keys because the encryption is non-deterministic
-	// (it uses a random salt). Instead, we need to decrypt the stored API key and compare with the provided one.
-	// However, we need to know which API key to decrypt first.
-	// Let's try a different approach - encrypt the incoming API key and use it to query the database
 	encryptedKey, err := security.EncryptPassword(apiKey)
 	if err != nil {
 		return false, -1
@@ -127,7 +123,6 @@ func validateAPIKey(apiKey string) (bool, int) {
 	// Try to find a user with this API key
 	userID, err := dbConn.GetUserByApikey(*encryptedKey)
 	if err == nil {
-		// We found a match, return the user ID
 		return true, userID
 	}
 

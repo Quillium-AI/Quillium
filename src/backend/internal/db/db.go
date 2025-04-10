@@ -223,6 +223,19 @@ func (d *DB) GetChatContent(chatId int) (*chats.ChatContent, error) {
 	return chatContent, nil
 }
 
+// VerifyChatOwnership checks if a chat belongs to a specific user
+func (d *DB) VerifyChatOwnership(chatId int, userId int) (bool, error) {
+	query := `
+		SELECT COUNT(*) FROM chat_contents WHERE id = $1 AND user_id = $2
+	`
+	var count int
+	err := d.Conn.QueryRow(context.Background(), query, chatId, userId).Scan(&count)
+	if err != nil {
+		return false, errors.New("failed to verify chat ownership: " + err.Error())
+	}
+	return count > 0, nil
+}
+
 func (d *DB) DeleteChat(chatId int) error {
 	query := `
 		DELETE FROM chat_contents WHERE id = $1

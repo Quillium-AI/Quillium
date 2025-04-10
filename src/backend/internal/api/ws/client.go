@@ -26,8 +26,11 @@ const (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	// Allow all origins for now (you may want to restrict this in production)
-	CheckOrigin: func(r *http.Request) bool { return true },
+	// Use the middleware's IsOriginAllowed function to check origin
+	CheckOrigin: func(r *http.Request) bool {
+		// Get the origin from the request and check if it's allowed for local CORS
+		return middleware.IsOriginAllowed(middleware.CORSTypeLocal, r.Header.Get("Origin"))
+	},
 }
 
 // ServeWs handles websocket requests from clients

@@ -19,13 +19,17 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 	log.Printf("Preparing OpenAI streaming request parameters")
 
 	// Create system message content
-	systemMessageContent := `You are Quillium, an advanced AI assistant designed to provide accurate, helpful, and concise responses to user queries.
+	systemMessageContent := `You are Quillium, an AI assistant. Your purpose is to answer user questions by searching and summarizing relevant information from trusted sources.
 
-				Guidelines for your responses:
-				- Be accurate and acknowledge limitations when uncertain
-				- Reference sources using [1], [2], etc.
-				- Keep answers concise and focused on the user's question
-				- Present information in a clear, structured way`
+							Follow these rules when generating responses:
+
+							1. Be accurate. If you are unsure or information is unavailable, say so clearly.
+							2. Keep your answers concise and focused on the user's question.
+							3. Reference sources using numbered brackets like [1], [2], etc.
+							4. Structure your response clearly using paragraphs, bullet points, or sections when needed.
+							5. Do not speculate or generate information that cannot be supported.
+
+							Always behave like a helpful, knowledgeable, and trustworthy research assistant.`
 
 	// Create user message content with query and Firecrawl results
 	userMessageContent := fmt.Sprintf("Here is the Users Query: %s\n\nHere are the Firecrawl results related to the query: %s",
@@ -114,8 +118,6 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 		return 0, nil, nil
 	})
 
-	// No need to collect chunks since frontend handles question generation
-
 	// Process each chunk as it comes in
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -158,8 +160,6 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 
 			content, ok := delta["content"].(string)
 			if ok && content != "" {
-				// Stream content directly to client
-				// Frontend handles related questions extraction
 				callback(StreamResponse{
 					Content: content,
 					Done:    false,
@@ -181,28 +181,13 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 		Done:    true,
 	})
 
-	// The stream is now complete, we can send the final message
-	// We don't need to collect content again since we've been streaming it
-	log.Printf("Stream completed, sending final message with sources and related questions")
-
-	// No need to process content for related questions
-	// The frontend now handles all related question generation
-	var relatedQuestions *chats.RelatedQuestions = nil
-
-	// We need to handle the related questions differently
-	// Instead of trying to replace already streamed content, we'll use the cleaned content for the final message
-	// The frontend will handle displaying the related questions separately
-
-	// Send the final message with sources and related questions
 	callback(StreamResponse{
-		Content:          "",
-		Done:             true,
-		Sources:          sources,
-		RelatedQuestions: relatedQuestions,
+		Content: "",
+		Done:    true,
+		Sources: sources,
 	})
 
 	return ChatResponse{
-		Content:          "", // No need to return content, it's all been streamed
-		RelatedQuestions: nil, // No related questions from backend
+		Content: "", // No need to return content, it's all been streamed
 	}, nil
 }

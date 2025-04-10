@@ -24,7 +24,7 @@ func SearchFirecrawl(api_key string, base_url string, query string, excludeWikip
 		Limit:   limit,
 		Lang:    "en",
 		Country: "us",
-		Timeout: 60000, // 60 seconds as per documentation
+		Timeout: 65000, // 65 seconds as per documentation
 	}
 
 	if enableMarkdown {
@@ -46,11 +46,10 @@ func SearchFirecrawl(api_key string, base_url string, query string, excludeWikip
 	}
 
 	client := &http.Client{
-		Timeout: 65 * time.Second, // Client timeout for the HTTP request (slightly longer than the API timeout)
+		Timeout: 70 * time.Second, // Client timeout for the HTTP request (slightly longer than the API timeout)
 	}
 
 	// Create the request
-	// Check if the base_url already contains /v1 to avoid duplication
 	reqURL := fmt.Sprintf("%s/search", apiEndpoint)
 
 	// Create a new request
@@ -95,6 +94,5 @@ func SearchFirecrawl(api_key string, base_url string, query string, excludeWikip
 		return nil, fmt.Errorf("failed to unmarshal search response: %v", err)
 	}
 
-	// Success! Return the response
 	return &response, nil
 }
