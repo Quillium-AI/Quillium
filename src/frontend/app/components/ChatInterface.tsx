@@ -15,7 +15,7 @@ export type Message = {
   role: 'user' | 'assistant';
   msgNum: number;
   sources?: Source[];
-  relatedQuestions?: string[];
+
 };
 
 export type Source = {
@@ -38,7 +38,7 @@ export default function ChatInterface() {
   const [chatId, setChatId] = useState<string | null>(null);
   const [qualityProfile] = useState('balanced');
   const [sources, setSources] = useState<Source[]>([]);
-  const [relatedQuestions, setRelatedQuestions] = useState<string[]>([]);
+
   
   // Reference to scroll to bottom of messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -101,7 +101,7 @@ export default function ChatInterface() {
         setMessages={setMessages}
         setIsLoading={setIsLoading}
         setSources={setSources}
-        setRelatedQuestions={setRelatedQuestions}
+
       />
 
       {/* Main Content */}
@@ -133,11 +133,9 @@ export default function ChatInterface() {
             />
           </div>
 
-          {/* Sidebar for Sources and Related Questions */}
+          {/* Sources Sidebar */}
           <ChatSidebar
             sources={sources}
-            relatedQuestions={relatedQuestions}
-            onQuestionClick={(question) => setInputValue(question)}
           />
         </div>
       </main>

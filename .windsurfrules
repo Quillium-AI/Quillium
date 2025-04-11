@@ -1,0 +1,10 @@
+1. My backend is built on Go and the frontend is built on React/Next.js
+2. Im developing on Linux
+3. My testing framework is Go's testing package
+4. My database is PostgreSQL
+5. Never create redundent code and always split up logic instead of everything in one file
+6. Always check if a function or Type etc. already exists before creating it
+7. Always check if a file already exists before creating it
+8. Always check if a directory already exists before creating it
+9. Never edit any Files outside of the Users request without any reason
+10. Always follow eslint rules

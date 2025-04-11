@@ -4,16 +4,13 @@ import { Source } from './ChatInterface';
 
 interface ChatSidebarProps {
   sources: Source[];
-  relatedQuestions: string[];
-  onQuestionClick: (question: string) => void;
 }
 
 /**
- * Sidebar component that displays sources and related questions
+ * Sidebar component that displays sources
  */
-export default function ChatSidebar({ sources, relatedQuestions, onQuestionClick }: ChatSidebarProps) {
-  // Debug related questions
-  console.log('ChatSidebar received relatedQuestions:', relatedQuestions);
+export default function ChatSidebar({ sources }: ChatSidebarProps) {
+
   return (
     <div className="lg:w-1/3 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 space-y-6">
       {/* Sources */}
@@ -38,25 +35,7 @@ export default function ChatSidebar({ sources, relatedQuestions, onQuestionClick
         )}
       </div>
 
-      {/* Related Questions */}
-      <div>
-        <h2 className="text-xl font-semibold mb-3 text-indigo-600 dark:text-indigo-400">Related Questions</h2>
-        {relatedQuestions.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">No related questions available</p>
-        ) : (
-          <div className="space-y-2 max-h-[30vh] overflow-y-auto">
-            {relatedQuestions.map((question, index) => (
-              <button
-                key={index}
-                onClick={() => onQuestionClick(question)}
-                className="w-full text-left p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition duration-200 text-sm"
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from 'react';
-import { extractRelatedQuestions } from '../utils/questionExtractor';
+
 import { Message, Source } from './ChatInterface';
 
 interface ChatResponseMessage {
@@ -12,7 +12,7 @@ interface ChatResponseMessage {
 interface ChatResponse {
   message?: ChatResponseMessage;
   sources?: Source[];
-  relatedQuestions?: { questions: string[] };
+
   chatId?: string;
 }
 
@@ -22,7 +22,7 @@ interface ChatStreamData {
   done: boolean;
   chatId?: string;
   sources?: Source[];
-  relatedQuestions?: { questions: string[] };
+
 }
 
 interface ChatMessageProcessorProps {
@@ -32,7 +32,7 @@ interface ChatMessageProcessorProps {
   setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
   setIsLoading: (isLoading: boolean) => void;
   setSources: (sources: Source[]) => void;
-  setRelatedQuestions: (questions: string[]) => void;
+
 }
 
 /**
@@ -44,8 +44,7 @@ export default function ChatMessageProcessor({
   setChatId,
   setMessages,
   setIsLoading,
-  setSources,
-  setRelatedQuestions
+  setSources
 }: ChatMessageProcessorProps) {
   /**
    * Handle a regular chat response
@@ -60,25 +59,23 @@ export default function ChatMessageProcessor({
         role: 'assistant',
         msgNum: response.message.msgNum,
         sources: response.sources || [],
-        relatedQuestions: response.relatedQuestions?.questions || []
+
       };
       setMessages(prev => [...prev, newMessage]);
     }
 
-    // Update sources and related questions
+    // Update sources
     if (response.sources) {
       setSources(response.sources);
     }
 
-    if (response.relatedQuestions?.questions) {
-      setRelatedQuestions(response.relatedQuestions.questions);
-    }
+
 
     // Save chat ID for future messages
     if (response.chatId && !chatId) {
       setChatId(response.chatId);
     }
-  }, [setMessages, setSources, setRelatedQuestions, setChatId, chatId, setIsLoading]);
+  }, [setMessages, setSources, setChatId, chatId, setIsLoading]);
 
   /**
    * Handle a streaming chat response
@@ -96,14 +93,9 @@ export default function ChatMessageProcessor({
         const updatedMessages = [...prev];
         const newContent = updatedMessages[lastAssistantMsgIndex].content + (streamData.content || '');
 
-        // Only generate related questions when streaming is complete
+
         if (streamData.done) {
-          // Extract related questions from the complete content
-          const { questions } = extractRelatedQuestions(newContent);
-          
-          console.log('Generated questions from final response:', questions);
-          setRelatedQuestions(questions);
-          updatedMessages[lastAssistantMsgIndex].relatedQuestions = questions;
+
         }
         
         // Update the message content
@@ -137,7 +129,7 @@ export default function ChatMessageProcessor({
     if (streamData.done) {
       setIsLoading(false);
     }
-  }, [setMessages, setSources, setRelatedQuestions, setChatId, chatId, setIsLoading]);
+  }, [setMessages, setSources, setChatId, chatId, setIsLoading]);
 
   // Process incoming WebSocket messages
   useEffect(() => {
