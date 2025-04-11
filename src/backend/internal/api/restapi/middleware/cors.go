@@ -21,6 +21,31 @@ var allowedLocalOrigins = []string{
 	"http://127.0.0.1:3000",
 }
 
+// IsOriginAllowed checks if the given origin is allowed for the specified CORS type
+func IsOriginAllowed(corsType CORSType, origin string) bool {
+	// If no origin is provided, allow the request (for curl, etc.)
+	if origin == "" {
+		return true
+	}
+
+	// Check based on CORS type
+	switch corsType {
+	case CORSTypeLocal:
+		// Check if origin is in the allowed list
+		for _, allowedOrigin := range allowedLocalOrigins {
+			if origin == allowedOrigin {
+				return true
+			}
+		}
+		return false
+	case CORSTypeOpen:
+		// All origins are allowed
+		return true
+	default:
+		return false
+	}
+}
+
 // WithCORS adds CORS headers to responses
 func WithCORS(next http.HandlerFunc) http.HandlerFunc {
 	return WithCORSType(CORSTypeOpen, next)

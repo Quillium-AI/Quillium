@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
@@ -29,8 +31,6 @@ func HandleMessage(hub *Hub, client *Client, data []byte) {
 		return
 	}
 
-	log.Printf("Received message type: %s", msg.Type)
-
 	switch msg.Type {
 	case TypeChatRequest:
 		handleChatRequest(client, msg.Content)
@@ -51,8 +51,6 @@ func handleChatRequest(client *Client, content interface{}) {
 		sendErrorResponse(client, "Invalid request format")
 		return
 	}
-
-	log.Printf("handleChatRequest: Content marshaled to JSON, length: %d", len(contentJSON))
 
 	var chatReq ChatRequest
 	if err := json.Unmarshal(contentJSON, &chatReq); err != nil {
@@ -79,7 +77,6 @@ func generateChatTitle(firstMessage string) string {
 
 // processChatRequest handles the actual processing of the chat request
 func processChatRequest(client *Client, req ChatRequest) {
-	log.Printf("processChatRequest: Starting to process chat request")
 
 	// Get the database connection
 	log.Printf("processChatRequest: Initializing database connection")
@@ -102,22 +99,9 @@ func processChatRequest(client *Client, req ChatRequest) {
 
 	// Get the latest user message
 	if len(req.Messages) == 0 {
-		// If no messages array is provided, but a message field exists, create a message from it
-		if req.Message != "" {
-			log.Printf("No messages array provided, but message field exists. Creating message from it.")
-			// Create a new message from the message field
-			req.Messages = []chats.Message{
-				{
-					Role:    "user",
-					Content: req.Message,
-					MsgNum:  1,
-				},
-			}
-		} else {
-			log.Printf("Error: No messages provided in request")
-			sendErrorResponse(client, "No messages provided")
-			return
-		}
+		log.Printf("Error: No messages provided in request")
+		sendErrorResponse(client, "No messages provided")
+		return
 	}
 
 	// Determine the message number for this conversation
@@ -133,12 +117,6 @@ func processChatRequest(client *Client, req ChatRequest) {
 	// Update the user message with the message number
 	userMessage.MsgNum = msgNum
 
-	// Check if streaming is enabled in the options
-	streaming := true // Default to streaming
-	if req.Options.DisableStreaming {
-		streaming = false
-	}
-
 	// Prepare chat history for the AI (excluding Firecrawl data)
 	var chatHistory []chats.Message
 	for i := 0; i < len(req.Messages)-1; i++ {
@@ -146,7 +124,6 @@ func processChatRequest(client *Client, req ChatRequest) {
 	}
 
 	// Search Firecrawl for relevant information
-	var firecrawlResults []string
 	// Initialize sources as an empty array to ensure it's never null
 	sources := []chats.Source{}
 
@@ -184,26 +161,27 @@ func processChatRequest(client *Client, req ChatRequest) {
 	// Set search parameters based on quality profile
 	var enableMarkdown bool
 	var resultLimit int
+	var DisableWikipedia bool
 	switch qualityProfile {
 	case "speed":
 		enableMarkdown = false
-		resultLimit = 10
+		resultLimit = 5
+		DisableWikipedia = false
 	case "quality":
 		enableMarkdown = true
 		resultLimit = 10
+		DisableWikipedia = true
 	default: // balanced
-		enableMarkdown = true
-		resultLimit = 5
+		enableMarkdown = false
+		resultLimit = 10
+		DisableWikipedia = false
 	}
-
-	// Search Firecrawl for the current query
-	log.Printf("Making Firecrawl request to %s with query: %s", adminSettings.FirecrawlBaseURL, userMessage.Content)
 
 	firecrawlResp, err := firecrawl.SearchFirecrawl(
 		*firecrawlAPIKey,
 		adminSettings.FirecrawlBaseURL,
 		userMessage.Content,
-		true, // Exclude Wikipedia
+		DisableWikipedia,
 		enableMarkdown,
 		resultLimit,
 	)
@@ -214,10 +192,8 @@ func processChatRequest(client *Client, req ChatRequest) {
 	} else {
 		log.Printf("Firecrawl search successful, results count=%d", len(firecrawlResp.Data))
 		// Parse the Firecrawl results
-		parsedSources, formattedResults := firecrawl.ParseSearchResults(firecrawlResp, msgNum)
-		log.Printf("Parsed %d sources and %d formatted results from Firecrawl", len(parsedSources), len(formattedResults))
+		parsedSources, _ := firecrawl.ParseSearchResults(firecrawlResp, msgNum)
 		sources = parsedSources
-		firecrawlResults = formattedResults
 	}
 
 	// Select the appropriate model based on the quality profile
@@ -231,28 +207,84 @@ func processChatRequest(client *Client, req ChatRequest) {
 		model = adminSettings.LLMProfileBalanced
 	}
 
-	// Call the AI service
-	log.Printf("Making OpenAI request to %s with model: %s", adminSettings.OpenAIBaseURL, model)
+	// Accumulator for the full assistant response content
+	var fullAssistantContent strings.Builder
+	// Create a channel to signal when streaming is done
+	doneChan := make(chan bool, 1)
 
-	aiResponse, err := llmproviders.Chat(
-		model,
-		*openAIAPIKey,
-		adminSettings.OpenAIBaseURL,
-		userMessage.Content,
-		firecrawlResults,
-	)
-	if err != nil {
-		log.Printf("Error calling AI service: %v", err)
-		sendErrorResponse(client, "Error generating AI response")
-		return
+	// Define the streaming callback function
+	streamCallback := func(streamResp llmproviders.StreamResponse) {
+		// Check for errors
+		if streamResp.Error != nil {
+			log.Printf("Error in stream: %v", streamResp.Error)
+			sendErrorResponse(client, fmt.Sprintf("Error in stream: %v", streamResp.Error))
+			// Ensure doneChan is signaled on error
+			select {
+			case doneChan <- true:
+			default:
+			}
+			return
+		}
+
+		if streamResp.Done {
+			// Send final stream marker with sources
+			sendChatStreamResponse(client, ChatStreamResponse{
+				ChatID:  req.ChatID,
+				Content: "",
+				Done:    true,
+				Sources: sources, // Include sources in the final DONE message
+			})
+			// Signal that streaming is done
+			doneChan <- true
+			return
+		}
+
+		// Append the content chunk to the accumulator
+		if streamResp.Content != "" {
+			fullAssistantContent.WriteString(streamResp.Content)
+		}
+
+		// Send the chunk to the client
+		sendChatStreamResponse(client, ChatStreamResponse{
+			ChatID:  req.ChatID,
+			Content: streamResp.Content,
+			Done:    false,
+			// Sources are sent only with the final Done message
+		})
 	}
 
-	log.Printf("OpenAI response successful, content length: %d", len(aiResponse.Content))
+	// Start the streaming request in a goroutine - ignore the ChatResponse return value
+	go func() {
+		_, err := llmproviders.Chat( // Ignore the first return value
+			model,
+			*openAIAPIKey,
+			adminSettings.OpenAIBaseURL,
+			userMessage.Content,
+			nil, // Pass nil instead of formatted firecrawl results
+			sources, // Pass sources struct
+			streamCallback,
+		)
+		if err != nil {
+			log.Printf("Error calling AI service: %v", err)
+			// Ensure doneChan is signaled if Chat fails before streaming starts/finishes
+			select {
+			case doneChan <- true:
+			default:
+			}
+			sendErrorResponse(client, "Error generating AI response")
+			// No return needed here, error is handled via callback/doneChan signal
+		}
+		// No need to send to responseChan
+	}()
 
-	// Create the assistant message
+	// Wait for streaming to complete
+	<-doneChan
+	log.Printf("Streaming finished. Final accumulated content length: %d", fullAssistantContent.Len())
+
+	// Create the assistant message using the accumulated content
 	assistantMessage := chats.Message{
 		Role:    "assistant",
-		Content: aiResponse.Content,
+		Content: fullAssistantContent.String(), // Use the accumulated content
 		MsgNum:  msgNum,
 	}
 
@@ -264,12 +296,6 @@ func processChatRequest(client *Client, req ChatRequest) {
 		Title:    generateChatTitle(userMessage.Content),
 		Messages: allMessages,
 		Sources:  sources,
-	}
-
-	// Add related questions if available
-	if aiResponse.RelatedQuestions != nil {
-		aiResponse.RelatedQuestions.MsgNum = msgNum
-		chatContent.RelatedQuestions = aiResponse.RelatedQuestions
 	}
 
 	// Save the chat content to the database
@@ -298,48 +324,6 @@ func processChatRequest(client *Client, req ChatRequest) {
 			}
 		}
 	}
-
-	// Send the response to the client
-	if streaming {
-		// Stream the response
-		StreamResponseToClient(client, req.ChatID, assistantMessage.Content, sources, chatContent.RelatedQuestions)
-	} else {
-		// Send the complete response
-		response := ChatResponse{
-			ChatID:           req.ChatID,
-			Message:          assistantMessage,
-			Done:             true,
-			Sources:          sources,
-			RelatedQuestions: chatContent.RelatedQuestions,
-		}
-		sendChatResponse(client, response)
-	}
-}
-
-// splitIntoChunks splits a string into chunks of approximately the given size
-func splitIntoChunks(s string, chunkSize int) []string {
-	var chunks []string
-	runes := []rune(s)
-
-	for i := 0; i < len(runes); i += chunkSize {
-		end := i + chunkSize
-		if end > len(runes) {
-			end = len(runes)
-		}
-		chunks = append(chunks, string(runes[i:end]))
-	}
-
-	return chunks
-}
-
-// sendChatResponse sends a chat response to the client
-func sendChatResponse(client *Client, resp ChatResponse) {
-	msg := Message{
-		Type:    TypeChatResponse,
-		Content: resp,
-	}
-
-	sendJSONMessage(client, msg)
 }
 
 // sendChatStreamResponse sends a streaming chat response to the client
@@ -370,5 +354,7 @@ func sendJSONMessage(client *Client, msg interface{}) {
 		return
 	}
 
+	// Add a small delay to prevent message batching
+	time.Sleep(time.Millisecond * 10)
 	client.send <- jsonData
 }

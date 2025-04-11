@@ -1,25 +1,15 @@
 package ws
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
-	"sync"
+	"strconv"
 	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
+	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
 )
-
-// ChatSession represents an active chat session
-type ChatSession struct {
-	UserID   string
-	Messages []chats.Message
-}
-
-// ChatManager manages active chat sessions
-type ChatManager struct {
-	sessions map[string]*ChatSession
-	mutex    sync.RWMutex
-}
 
 // NewChatManager creates a new chat manager
 func NewChatManager() *ChatManager {
@@ -65,94 +55,227 @@ func (cm *ChatManager) AddMessage(chatID string, message chats.Message) bool {
 }
 
 // SaveChat saves a chat session to the database
-// This is a placeholder function - in a real implementation, you would save to a database
 func (cm *ChatManager) SaveChat(chatID string) error {
-	// In a real implementation, you would save the chat to a database
-	// For now, we'll just log that we're saving the chat
-	log.Printf("Saving chat %s to database", chatID)
+	cm.mutex.RLock()
+	session, exists := cm.sessions[chatID]
+	cm.mutex.RUnlock()
+
+	if !exists {
+		return errors.New("chat session not found")
+	}
+
+	// Convert to ChatContent for database storage
+	chatContent := &chats.ChatContent{
+		Title:    "Chat Session " + chatID, // You might want to allow setting titles elsewhere
+		Messages: session.Messages,
+		Sources:  []chats.Source{}, // Add sources if your application uses them
+	}
+
+	// Get database connection
+	dbConn, err := db.Initialize()
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	// Convert userID from string to int
+	userID, err := strconv.Atoi(session.UserID)
+	if err != nil {
+		return fmt.Errorf("invalid user ID format: %w", err)
+	}
+
+	// Save to database
+	err = dbConn.CreateChat(userID, chatContent)
+	if err != nil {
+		return fmt.Errorf("failed to save chat to database: %w", err)
+	}
+
+	log.Printf("Chat session %s saved to database", chatID)
 	return nil
 }
 
 // ProcessChatRequest processes a chat request and sends responses to the client
 func ProcessChatRequest(client *Client, req ChatRequest) {
-	// In a real implementation, this would call the appropriate LLM provider
-	// based on the request options
+	log.Printf("Processing chat request for chat ID: %s", req.ChatID)
 
-	// For now, we'll just use our dummy implementation
+	// Validate request
+	if req.ChatID == "" {
+		// Log the error and return
+		log.Printf("Chat request missing chat ID")
+		// Use existing error handling mechanism
+		sendErrorResponse(client, "Chat ID is required")
+		return
+	}
+
+	// Check if we need to load an existing chat from database
+	if len(req.Messages) == 0 {
+		// This might be a continuation of an existing chat
+		// You could load previous messages from the database here
+		chatID, err := strconv.Atoi(req.ChatID)
+		if err == nil {
+			dbConn, err := db.Initialize()
+			if err == nil {
+				defer dbConn.Close()
+				chatContent, err := dbConn.GetChatContent(chatID)
+				if err == nil && chatContent != nil {
+					// Add messages from database to request
+					req.Messages = chatContent.Messages
+				}
+			}
+		}
+	}
+
 	processChatRequest(client, req)
+
+	// After processing, save the chat session to the database
+	// This could be done asynchronously
+	go func() {
+		// Add a small delay to ensure messages are processed first
+		time.Sleep(time.Second)
+		cm := NewChatManager()
+		if err := cm.SaveChat(req.ChatID); err != nil {
+			log.Printf("Error saving chat %s: %v", req.ChatID, err)
+		}
+	}()
 }
 
 // GetChatHistory retrieves chat history from the database
-// This is a placeholder function - in a real implementation, you would fetch from a database
 func GetChatHistory(userID string) ([]ChatSession, error) {
-	// In a real implementation, you would fetch chat history from a database
-	// For now, we'll just return an empty slice
-	return []ChatSession{}, nil
+	// Convert userID from string to int
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID format: %w", err)
+	}
+
+	// Get database connection
+	dbConn, err := db.Initialize()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	// Get chat IDs for this user
+	chatIDs, err := dbConn.GetChats(userIDInt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chat IDs: %w", err)
+	}
+
+	// Retrieve each chat and convert to ChatSession
+	var sessions []ChatSession
+	for _, chatID := range chatIDs {
+		chatContent, err := dbConn.GetChatContent(chatID)
+		if err != nil {
+			log.Printf("Error retrieving chat %d: %v", chatID, err)
+			continue
+		}
+
+		// Convert ChatContent to ChatSession
+		session := ChatSession{
+			ChatID:   strconv.Itoa(chatID),
+			UserID:   userID,
+			Messages: chatContent.Messages,
+			Title:    chatContent.Title,
+		}
+
+		sessions = append(sessions, session)
+	}
+
+	return sessions, nil
+}
+
+// GetChat retrieves a specific chat session by its ID and validates that it belongs to the client
+func GetChat(chatID string, client *Client) (*ChatSession, error) {
+	// Convert chatID from string to int
+	chatIDInt, err := strconv.Atoi(chatID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid chat ID format: %w", err)
+	}
+
+	// Get database connection
+	dbConn, err := db.Initialize()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	// Use the client's user ID from context
+	userIDInt := client.userID
+
+	// Verify that this chat belongs to the user
+	isOwner, err := dbConn.VerifyChatOwnership(chatIDInt, userIDInt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify chat ownership: %w", err)
+	}
+
+	if !isOwner {
+		return nil, fmt.Errorf("chat %s does not belong to the current user", chatID)
+	}
+
+	// Get chat content using the existing function
+	chatContent, err := dbConn.GetChatContent(chatIDInt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve chat %s: %w", chatID, err)
+	}
+
+	// Convert ChatContent to ChatSession
+	session := &ChatSession{
+		ChatID:   chatID,
+		UserID:   strconv.Itoa(userIDInt),
+		Messages: chatContent.Messages,
+		Title:    chatContent.Title,
+	}
+
+	return session, nil
 }
 
 // DeleteChat deletes a chat session
-// This is a placeholder function - in a real implementation, you would delete from a database
 func DeleteChat(chatID string) error {
-	// In a real implementation, you would delete the chat from a database
-	// For now, we'll just log that we're deleting the chat
-	log.Printf("Deleting chat %s from database", chatID)
+	// Convert chatID from string to int
+	chatIDInt, err := strconv.Atoi(chatID)
+	if err != nil {
+		return fmt.Errorf("invalid chat ID format: %w", err)
+	}
+
+	// Get database connection
+	dbConn, err := db.Initialize()
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	// Delete from database
+	err = dbConn.DeleteChat(chatIDInt)
+	if err != nil {
+		return fmt.Errorf("failed to delete chat from database: %w", err)
+	}
+
+	// Also remove from in-memory cache if it exists
+	cm := NewChatManager()
+	cm.mutex.Lock()
+	delete(cm.sessions, chatID)
+	cm.mutex.Unlock()
+
+	log.Printf("Chat session %s deleted from database", chatID)
 	return nil
 }
 
 // StreamResponseToClient streams a response to the client
-func StreamResponseToClient(client *Client, chatID string, content string, sources []chats.Source, relatedQuestions *chats.RelatedQuestions) {
-	// Split the content into chunks
-	chunks := splitIntoChunks(content, 50)
-
-	for i, chunk := range chunks {
-		isFinalChunk := i == len(chunks)-1
-		
-		// Create a streaming response
-		streamResp := ChatStreamResponse{
-			ChatID:  chatID,
-			Content: chunk,
-			Done:    isFinalChunk,
-		}
-		
-		// Only include sources and related questions in the final chunk
-		if isFinalChunk {
-			streamResp.Sources = sources
-			streamResp.RelatedQuestions = relatedQuestions
-		}
-
-		// Send the streaming response
-		sendChatStreamResponse(client, streamResp)
-
-		// Add a small delay between chunks to simulate natural typing speed
-		// 20ms provides a good balance between responsiveness and readability
-		time.Sleep(20 * time.Millisecond)
+func StreamResponseToClient(client *Client, chatID string, content string, done bool) {
+	// Minimal logging for streaming response
+	if done {
+		log.Printf("Completed streaming response")
 	}
-}
-
-// SendResponseToClient sends a complete response to the client
-func SendResponseToClient(client *Client, chatID string, message chats.Message) {
-	// Send the complete response
-	sendChatResponse(client, ChatResponse{
+	streamResp := ChatStreamResponse{
 		ChatID:  chatID,
-		Message: message,
-		Done:    true,
-	})
+		Content: content,
+		Done:    done,
+	}
+
+	sendChatStreamResponse(client, streamResp)
 }
 
-// RegisterChatHandlers registers chat-related WebSocket message handlers
-func RegisterChatHandlers() {
-	// This would be used to register specific message type handlers
-	// For now, we're handling everything in the HandleMessage function
-}
-
-// serializeChat serializes a chat session to JSON
-func serializeChat(session *ChatSession) ([]byte, error) {
-	return json.Marshal(session)
-}
-
-// deserializeChat deserializes a chat session from JSON
-func deserializeChat(data []byte) (*ChatSession, error) {
-	var session ChatSession
-	err := json.Unmarshal(data, &session)
-	return &session, err
+// WebSocketMessage defines the structure of messages sent over WebSocket
+type WebSocketMessage struct {
+	Type    string      `json:"type"`
+	Content interface{} `json:"content"`
 }

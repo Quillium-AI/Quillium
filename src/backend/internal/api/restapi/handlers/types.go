@@ -4,16 +4,18 @@ import "github.com/Quillium-AI/Quillium/src/backend/internal/settings"
 
 // LoginRequest represents a login request
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	RememberMe bool   `json:"remember_me"`
 }
 
 // LoginResponse represents a login response
 type LoginResponse struct {
-	Token    string                `json:"token"`
-	UserID   int                   `json:"user_id"`
-	IsAdmin  bool                  `json:"is_admin"`
-	Settings settings.UserSettings `json:"settings"`
+	Token        string                `json:"token"`
+	RefreshToken string                `json:"refresh_token,omitempty"`
+	UserID       int                   `json:"user_id"`
+	IsAdmin      bool                  `json:"is_admin"`
+	Settings     settings.UserSettings `json:"settings"`
 }
 
 // APIKeyResponse represents an API key response

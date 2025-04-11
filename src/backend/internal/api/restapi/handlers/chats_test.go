@@ -38,7 +38,7 @@ func setupTestDB(t *testing.T) *db.DB {
 // Setup test context with user ID
 func setupUserContext(userID int) context.Context {
 	ctx := context.Background()
-	return context.WithValue(ctx, middleware.UserIDKey, userID)
+	return context.WithValue(ctx, middleware.UserIDKey(), userID)
 }
 
 // Create a test user for chat tests

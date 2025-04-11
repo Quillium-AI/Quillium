@@ -1,6 +1,8 @@
 package ws
 
 import (
+	"sync"
+
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
 	"github.com/gorilla/websocket"
 )
@@ -20,6 +22,20 @@ type Hub struct {
 	unregister chan *Client
 }
 
+// ChatSession represents an active chat session
+type ChatSession struct {
+	ChatID   string
+	UserID   string
+	Messages []chats.Message
+	Title    string
+}
+
+// ChatManager manages active chat sessions
+type ChatManager struct {
+	sessions map[string]*ChatSession
+	mutex    sync.RWMutex
+}
+
 // Message represents a message sent between clients
 type Message struct {
 	Type    string      `json:"type"`
@@ -37,34 +53,22 @@ type ChatMessage struct {
 type ChatRequest struct {
 	ChatID   string          `json:"chatId"`
 	Messages []chats.Message `json:"messages"`
-	Message  string          `json:"message"`  // For backward compatibility with frontend
 	Options  ChatOptions     `json:"options"`
 }
 
 // ChatOptions represents options for a chat request
 type ChatOptions struct {
-	QualityProfile   string  `json:"qualityProfile"`
-	Temperature      float64 `json:"temperature"`
-	MaxTokens        int     `json:"maxTokens"`
-	DisableStreaming bool    `json:"disableStreaming"`
-}
-
-// ChatResponse represents a response from the AI
-type ChatResponse struct {
-	ChatID           string                  `json:"chatId"`
-	Message          chats.Message           `json:"message"`
-	Done             bool                    `json:"done"`
-	Sources          []chats.Source          `json:"sources"`
-	RelatedQuestions *chats.RelatedQuestions `json:"relatedQuestions"`
+	QualityProfile string  `json:"qualityProfile"`
+	Temperature    float64 `json:"temperature"`
+	MaxTokens      int     `json:"maxTokens"`
 }
 
 // ChatStreamResponse represents a streaming response from the AI
 type ChatStreamResponse struct {
-	ChatID           string                 `json:"chatId"`
-	Content          string                 `json:"content"`
-	Done             bool                   `json:"done"`
-	Sources          []chats.Source         `json:"sources,omitempty"`
-	RelatedQuestions *chats.RelatedQuestions `json:"relatedQuestions,omitempty"`
+	ChatID  string         `json:"chatId"`
+	Content string         `json:"content"`
+	Done    bool           `json:"done"`
+	Sources []chats.Source `json:"sources,omitempty"`
 }
 
 // ErrorResponse represents an error response

@@ -75,7 +75,7 @@ const SignIn: React.FC = () => {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          rememberMe: formData.rememberMe
+          remember_me: formData.rememberMe
         }),
       });
 

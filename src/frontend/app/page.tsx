@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "./components/AuthProvider";
 import { WebSocketProvider } from "./components/WebSocketProvider";
 import ChatInterface from "./components/ChatInterface";
-import DeleteAccountDialog from "./components/DeleteAccountDialog";
 import './globals.css';
 
 // Note: Types are defined in the ChatInterface component
@@ -22,7 +21,7 @@ export default function Home() {
 function AppContent() {
   const router = useRouter();
   const { isAuthenticated, isLoading, error } = useAuth();
-  
+
   // Loading state while checking authentication
   if (isLoading) {
     return (
@@ -34,7 +33,7 @@ function AppContent() {
       </div>
     );
   }
-  
+
   // Error state (not authenticated or server error)
   if (error && !isAuthenticated) {
     return (
@@ -51,7 +50,7 @@ function AppContent() {
       </div>
     );
   }
-  
+
   // Redirect to signin if not authenticated
   if (!isAuthenticated) {
     router.push('/signin');
@@ -61,12 +60,11 @@ function AppContent() {
       </div>
     );
   }
-  
+
   // Dashboard content (authenticated user) with chat interface
   return (
     <WebSocketProvider>
       <ChatInterface />
-      <DeleteAccountDialog />
     </WebSocketProvider>
   );
 }

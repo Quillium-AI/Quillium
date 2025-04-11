@@ -37,8 +37,8 @@ func setupSettingsTestDB(t *testing.T) *db.DB {
 // Setup test context with user ID and admin status
 func setupAdminContextForSettingsTests(userID int, isAdmin bool) context.Context {
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, middleware.UserIDKey, userID)
-	ctx = context.WithValue(ctx, middleware.IsAdminKey, isAdmin)
+	ctx = context.WithValue(ctx, middleware.UserIDKey(), userID)
+	ctx = context.WithValue(ctx, middleware.IsAdminKey(), isAdmin)
 	return ctx
 }
 

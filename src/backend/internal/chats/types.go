@@ -15,16 +15,16 @@ type Source struct {
 	MsgNum      int    `json:"msg_num"`     // Message number this source is associated with
 }
 
-// RelatedQuestions represents a list of questions related to the user's query
-type RelatedQuestions struct {
-	Questions []string `json:"questions"` // List of related questions
-	MsgNum    int      `json:"msg_num"`   // Message number these questions are associated with
-}
-
 // ChatContent represents the content of a chat with a title and messages
 type ChatContent struct {
-	Title            string            `json:"title"`            // Title of the chat
-	Messages         []Message         `json:"messages"`         // Array of messages in the chat
-	Sources          []Source          `json:"sources"`          // Sources of information used in responses
-	RelatedQuestions *RelatedQuestions `json:"relatedQuestions"` // Related questions for the chat
+	Title    string    `json:"title"`    // Title of the chat
+	Messages []Message `json:"messages"` // Array of messages in the chat
+	Sources  []Source  `json:"sources"`  // Sources of information used in responses
+}
+
+// ChatContentWithoutSources represents just the title and messages without sources
+// This is used for database storage to prevent duplicate storage of sources
+type ChatContentWithoutSources struct {
+	Title    string    `json:"title"`    // Title of the chat
+	Messages []Message `json:"messages"` // Array of messages in the chat
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type AuthContextType = {
@@ -13,6 +13,7 @@ type AuthContextType = {
   setShowConfirmation: (show: boolean) => void;
   handleLogout: () => Promise<void>;
   handleDeleteAccount: () => Promise<void>;
+  refreshToken: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +38,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [tokenRefreshTimer, setTokenRefreshTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Refresh token function - attempts to get a new access token using the refresh token
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include', // Important: include credentials to send cookies
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Token refreshed successfully
+        console.log('Token refreshed successfully');
+        return true;
+      } else {
+        // Failed to refresh token, user needs to log in again
+        console.error('Failed to refresh token:', response.status);
+        setIsAuthenticated(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      setIsAuthenticated(false);
+      return false;
+    }
+  }, []);
+
+  // Set up automatic token refresh
+  useEffect(() => {
+    if (isAuthenticated && tokenRefreshTimer === null) {
+      // Refresh the token every 14 minutes (before the 15-minute expiration)
+      const timer = setInterval(() => {
+        refreshToken().catch(error => {
+          console.error('Scheduled token refresh failed:', error);
+        });
+      }, 14 * 60 * 1000); // 14 minutes in milliseconds
+      
+      setTokenRefreshTimer(timer);
+    }
+
+    return () => {
+      // Clear the timer when the component unmounts or auth state changes
+      if (tokenRefreshTimer !== null) {
+        clearInterval(tokenRefreshTimer);
+        setTokenRefreshTimer(null);
+      }
+    };
+  }, [isAuthenticated, refreshToken, tokenRefreshTimer]);
 
   useEffect(() => {
     // Check if user is authenticated by verifying the auth token cookie
@@ -62,8 +114,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (response.ok) {
           // User is authenticated, show dashboard content
           setIsAuthenticated(true);
+        } else if (response.status === 401) {
+          // Token expired, try to refresh it
+          const refreshed = await refreshToken();
+          if (refreshed) {
+            setIsAuthenticated(true);
+          } else {
+            // Refresh failed, redirect to signin
+            setTimeout(() => router.push('/signin'), 1500);
+            setError('Session expired. Please login again.');
+          }
         } else {
-          // No valid token, redirect to signin
+          // Other error, redirect to signin
           setTimeout(() => router.push('/signin'), 1500);
           setError('Not authenticated. Redirecting to login...');
         }
@@ -78,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, refreshToken]);
 
   const handleLogout = async () => {
     try {
@@ -150,6 +212,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setShowConfirmation,
     handleLogout,
     handleDeleteAccount,
+    refreshToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

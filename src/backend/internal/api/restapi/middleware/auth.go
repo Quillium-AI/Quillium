@@ -1,6 +1,9 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -115,10 +118,6 @@ func validateAPIKey(apiKey string) (bool, int) {
 		return false, -1
 	}
 
-	// The issue is that we can't directly compare encrypted API keys because the encryption is non-deterministic
-	// (it uses a random salt). Instead, we need to decrypt the stored API key and compare with the provided one.
-	// However, we need to know which API key to decrypt first.
-	// Let's try a different approach - encrypt the incoming API key and use it to query the database
 	encryptedKey, err := security.EncryptPassword(apiKey)
 	if err != nil {
 		return false, -1
@@ -127,7 +126,6 @@ func validateAPIKey(apiKey string) (bool, int) {
 	// Try to find a user with this API key
 	userID, err := dbConn.GetUserByApikey(*encryptedKey)
 	if err == nil {
-		// We found a match, return the user ID
 		return true, userID
 	}
 
@@ -184,9 +182,10 @@ func GenerateToken(userID int, isAdmin bool, expiration time.Duration) (string, 
 	return tokenString, nil
 }
 
-// GenerateJWT creates a new JWT token for a user
+// GenerateJWT creates a new JWT token for a user with a short expiration time (15 minutes)
 func GenerateJWT(userID int, isAdmin bool) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
+	// Short-lived access token (15 minutes)
+	expirationTime := time.Now().Add(15 * time.Minute)
 	claims := &Claims{
 		UserID:  userID,
 		IsAdmin: isAdmin,
@@ -200,4 +199,43 @@ func GenerateJWT(userID int, isAdmin bool) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtSecret)
 	return tokenString, err
+}
+
+// GenerateRefreshToken creates a new refresh token for a user
+func GenerateRefreshToken() (string, error) {
+	// Generate a random string for the refresh token
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", b), nil
+}
+
+// RefreshJWT refreshes a JWT token using a valid refresh token
+func RefreshJWT(refreshToken string) (string, int, bool, error) {
+	if dbConn == nil {
+		return "", 0, false, errors.New("database connection not initialized")
+	}
+
+	// Validate refresh token and get user ID
+	userID, err := dbConn.GetRefreshToken(refreshToken)
+	if err != nil {
+		return "", 0, false, err
+	}
+
+	// Get user data to check if admin
+	id := userID // Create a copy to use with pointer
+	userData, err := dbConn.GetUser(nil, &id)
+	if err != nil || userData == nil {
+		return "", 0, false, errors.New("user not found")
+	}
+
+	// Generate new JWT token
+	newToken, err := GenerateJWT(userID, userData.IsAdmin)
+	if err != nil {
+		return "", 0, false, err
+	}
+
+	return newToken, userID, userData.IsAdmin, nil
 }
