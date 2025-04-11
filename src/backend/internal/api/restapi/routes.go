@@ -31,6 +31,7 @@ func SetupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/version", withMiddleware(versionHandler, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/auth/login", withMiddleware(handlers.Login, middleware.AuthTypeNone))
 	mux.HandleFunc("/api/auth/signup", withMiddleware(handlers.Signup, middleware.AuthTypeNone))
+	mux.HandleFunc("/api/auth/refresh", withMiddleware(handlers.RefreshToken, middleware.AuthTypeNone))
 
 	// Frontend-only endpoints (JWT auth required)
 	// TODO: Implement SSO endpoints

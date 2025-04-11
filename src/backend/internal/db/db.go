@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/settings"
@@ -109,6 +110,16 @@ func CreateTables(conn *pgx.Conn) error {
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		);
 		CREATE INDEX IF NOT EXISTS idx_user_apikeys_user_id ON user_apikeys(user_id);
+		CREATE TABLE IF NOT EXISTS refresh_tokens (
+			id SERIAL PRIMARY KEY,
+			user_id INT NOT NULL,
+			token TEXT NOT NULL UNIQUE,
+			expires_at TIMESTAMP NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		);
+		CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+		CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
 	`
 	_, err := conn.Exec(context.Background(), query)
 	if err != nil {
@@ -585,6 +596,69 @@ func (d *DB) DeleteUserApikey(user *user.User, apikey_encrypt string) error {
 	_, err := d.Conn.Exec(context.Background(), query, user.ID, apikey_encrypt)
 	if err != nil {
 		return errors.New("failed to delete user apikey: " + err.Error())
+	}
+	return nil
+}
+
+// CreateRefreshToken creates a new refresh token for a user
+func (d *DB) CreateRefreshToken(userId int, token string, expiresAt time.Time) error {
+	query := `
+		INSERT INTO refresh_tokens (user_id, token, expires_at)
+		VALUES ($1, $2, $3)
+	`
+	_, err := d.Conn.Exec(context.Background(), query, userId, token, expiresAt)
+	if err != nil {
+		return errors.New("failed to create refresh token: " + err.Error())
+	}
+	return nil
+}
+
+// GetRefreshToken retrieves a refresh token and validates it's not expired
+func (d *DB) GetRefreshToken(token string) (int, error) {
+	query := `
+		SELECT user_id, expires_at
+		FROM refresh_tokens
+		WHERE token = $1
+	`
+	var userId int
+	var expiresAt time.Time
+	err := d.Conn.QueryRow(context.Background(), query, token).Scan(&userId, &expiresAt)
+	if err != nil {
+		return 0, errors.New("refresh token not found: " + err.Error())
+	}
+
+	// Check if token is expired
+	if time.Now().After(expiresAt) {
+		// Delete expired token
+		_ = d.DeleteRefreshToken(token)
+		return 0, errors.New("refresh token expired")
+	}
+
+	return userId, nil
+}
+
+// DeleteRefreshToken removes a refresh token
+func (d *DB) DeleteRefreshToken(token string) error {
+	query := `
+		DELETE FROM refresh_tokens
+		WHERE token = $1
+	`
+	_, err := d.Conn.Exec(context.Background(), query, token)
+	if err != nil {
+		return errors.New("failed to delete refresh token: " + err.Error())
+	}
+	return nil
+}
+
+// DeleteUserRefreshTokens removes all refresh tokens for a user
+func (d *DB) DeleteUserRefreshTokens(userId int) error {
+	query := `
+		DELETE FROM refresh_tokens
+		WHERE user_id = $1
+	`
+	_, err := d.Conn.Exec(context.Background(), query, userId)
+	if err != nil {
+		return errors.New("failed to delete user refresh tokens: " + err.Error())
 	}
 	return nil
 }
