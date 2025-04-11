@@ -21,3 +21,10 @@ type ChatContent struct {
 	Messages []Message `json:"messages"` // Array of messages in the chat
 	Sources  []Source  `json:"sources"`  // Sources of information used in responses
 }
+
+// ChatContentWithoutSources represents just the title and messages without sources
+// This is used for database storage to prevent duplicate storage of sources
+type ChatContentWithoutSources struct {
+	Title    string    `json:"title"`    // Title of the chat
+	Messages []Message `json:"messages"` // Array of messages in the chat
+}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
@@ -123,7 +124,6 @@ func processChatRequest(client *Client, req ChatRequest) {
 	}
 
 	// Search Firecrawl for relevant information
-	var firecrawlResults []string
 	// Initialize sources as an empty array to ensure it's never null
 	sources := []chats.Source{}
 
@@ -192,9 +192,8 @@ func processChatRequest(client *Client, req ChatRequest) {
 	} else {
 		log.Printf("Firecrawl search successful, results count=%d", len(firecrawlResp.Data))
 		// Parse the Firecrawl results
-		parsedSources, formattedResults := firecrawl.ParseSearchResults(firecrawlResp, msgNum)
+		parsedSources, _ := firecrawl.ParseSearchResults(firecrawlResp, msgNum)
 		sources = parsedSources
-		firecrawlResults = formattedResults
 	}
 
 	// Select the appropriate model based on the quality profile
@@ -208,8 +207,8 @@ func processChatRequest(client *Client, req ChatRequest) {
 		model = adminSettings.LLMProfileBalanced
 	}
 
-	// Create a channel to receive the final response
-	responseChan := make(chan llmproviders.ChatResponse, 1)
+	// Accumulator for the full assistant response content
+	var fullAssistantContent strings.Builder
 	// Create a channel to signal when streaming is done
 	doneChan := make(chan bool, 1)
 
@@ -219,22 +218,30 @@ func processChatRequest(client *Client, req ChatRequest) {
 		if streamResp.Error != nil {
 			log.Printf("Error in stream: %v", streamResp.Error)
 			sendErrorResponse(client, fmt.Sprintf("Error in stream: %v", streamResp.Error))
-			doneChan <- true
+			// Ensure doneChan is signaled on error
+			select {
+			case doneChan <- true:
+			default:
+			}
 			return
 		}
 
 		if streamResp.Done {
-
+			// Send final stream marker with sources
 			sendChatStreamResponse(client, ChatStreamResponse{
 				ChatID:  req.ChatID,
 				Content: "",
 				Done:    true,
-				Sources: sources,
+				Sources: sources, // Include sources in the final DONE message
 			})
-
 			// Signal that streaming is done
 			doneChan <- true
 			return
+		}
+
+		// Append the content chunk to the accumulator
+		if streamResp.Content != "" {
+			fullAssistantContent.WriteString(streamResp.Content)
 		}
 
 		// Send the chunk to the client
@@ -242,50 +249,42 @@ func processChatRequest(client *Client, req ChatRequest) {
 			ChatID:  req.ChatID,
 			Content: streamResp.Content,
 			Done:    false,
+			// Sources are sent only with the final Done message
 		})
 	}
 
-	// Start the streaming request in a goroutine
+	// Start the streaming request in a goroutine - ignore the ChatResponse return value
 	go func() {
-		aiResponse, err := llmproviders.Chat(
+		_, err := llmproviders.Chat( // Ignore the first return value
 			model,
 			*openAIAPIKey,
 			adminSettings.OpenAIBaseURL,
 			userMessage.Content,
-			firecrawlResults,
-			sources,
+			nil, // Pass nil instead of formatted firecrawl results
+			sources, // Pass sources struct
 			streamCallback,
 		)
 		if err != nil {
 			log.Printf("Error calling AI service: %v", err)
+			// Ensure doneChan is signaled if Chat fails before streaming starts/finishes
+			select {
+			case doneChan <- true:
+			default:
+			}
 			sendErrorResponse(client, "Error generating AI response")
-			doneChan <- true
-			return
+			// No return needed here, error is handled via callback/doneChan signal
 		}
-		responseChan <- aiResponse
+		// No need to send to responseChan
 	}()
 
-	// Wait for streaming to complete - this just waits for the doneChan signal
-	// which is sent when the final chunk with related questions is processed
+	// Wait for streaming to complete
 	<-doneChan
+	log.Printf("Streaming finished. Final accumulated content length: %d", fullAssistantContent.Len())
 
-	var aiResponse llmproviders.ChatResponse
-	select {
-	case aiResponse = <-responseChan:
-		log.Printf("OpenAI response successful")
-	default:
-		// If we don't get a response immediately, use an empty response
-		// This should never happen with direct streaming, but we keep it as a fallback
-		log.Printf("Using fallback response")
-		aiResponse = llmproviders.ChatResponse{
-			Content: "Sorry, I couldn't generate a response at this time.",
-		}
-	}
-
-	// Create the assistant message
+	// Create the assistant message using the accumulated content
 	assistantMessage := chats.Message{
 		Role:    "assistant",
-		Content: aiResponse.Content,
+		Content: fullAssistantContent.String(), // Use the accumulated content
 		MsgNum:  msgNum,
 	}
 

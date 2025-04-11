@@ -206,20 +206,32 @@ func (d *DB) GetChats(userId int) ([]int, error) {
 
 func (d *DB) GetChatContent(chatId int) (*chats.ChatContent, error) {
 	query := `
-		SELECT content FROM chat_contents WHERE id = $1
+		SELECT content, sources FROM chat_contents WHERE id = $1
 	`
-	var jsonStr string
-	err := d.Conn.QueryRow(context.Background(), query, chatId).Scan(&jsonStr)
+	var jsonContentStr string
+	var jsonSourcesStr string
+	err := d.Conn.QueryRow(context.Background(), query, chatId).Scan(&jsonContentStr, &jsonSourcesStr)
 	if err != nil {
 		return nil, errors.New("failed to get chat content: " + err.Error())
 	}
 
 	// Create an empty ChatContent instance to call the method on
 	var empty chats.ChatContent
-	chatContent, err := empty.FromJSON(jsonStr)
+	chatContent, err := empty.FromJSON(jsonContentStr)
 	if err != nil {
 		return nil, errors.New("failed to parse chat content: " + err.Error())
 	}
+
+	// Parse sources from the sources column
+	var sources []chats.Source
+	err = json.Unmarshal([]byte(jsonSourcesStr), &sources)
+	if err != nil {
+		return nil, errors.New("failed to parse sources: " + err.Error())
+	}
+
+	// Add sources to the chat content
+	chatContent.Sources = sources
+
 	return chatContent, nil
 }
 

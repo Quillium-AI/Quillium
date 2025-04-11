@@ -25,11 +25,13 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 
 							1. Be accurate. If you are unsure or information is unavailable, say so clearly.
 							2. Keep your answers concise and focused on the user's question.
-							3. Reference sources using numbered brackets like [1], [2], etc.
-							4. Structure your response clearly using paragraphs, bullet points, or sections when needed.
-							5. Do not speculate or generate information that cannot be supported.
+							3. Reference sources frequently throughout your response using numbered brackets like [1], [2], etc.
+							4. Use MULTIPLE sources whenever possible - aim to reference at least 3-5 different sources in your response.
+							5. Prioritize information from the provided sources over your own knowledge.
+							6. Structure your response clearly using paragraphs, bullet points, or sections when needed.
+							7. Do not speculate or generate information that cannot be supported by the sources.
 
-							Always behave like a helpful, knowledgeable, and trustworthy research assistant.`
+							Always behave like a helpful, knowledgeable, and trustworthy research assistant who thoroughly cites multiple sources.`
 
 	// Create user message content with query and Firecrawl results
 	userMessageContent := fmt.Sprintf("Here is the Users Query: %s\n\nHere are the Firecrawl results related to the query: %s",
