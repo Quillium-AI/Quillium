@@ -50,6 +50,7 @@ func init() {
 				PasswordHash: passwordHash,
 				IsSso:        false,
 				IsAdmin:      true,
+				Username:     "admin",
 			}
 			_, err = dbConn.CreateUser(adminUser)
 			if err != nil {
@@ -67,7 +68,6 @@ func init() {
 		log.Printf("Warning: Failed to initialize admin settings: %v", err)
 	}
 }
-
 
 func main() {
 	log.Println("Starting backend...")

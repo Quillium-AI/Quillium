@@ -57,6 +57,7 @@ func CreateTables(conn *pgx.Conn) error {
 			email VARCHAR(255) NOT NULL UNIQUE,
 			password_hash TEXT NULL,
 			sso_user_id TEXT NULL,
+			username VARCHAR(255) NOT NULL,
 			is_sso BOOLEAN NOT NULL DEFAULT FALSE,
 			sso_provider_id INT NULL,
 			is_admin BOOLEAN NOT NULL DEFAULT FALSE,
@@ -130,8 +131,8 @@ func CreateTables(conn *pgx.Conn) error {
 
 func (d *DB) CreateUser(user *user.User) (*int, error) {
 	query := `
-		INSERT INTO users (email, password_hash, is_sso, sso_provider_id, is_admin)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO users (email, password_hash, is_sso, sso_provider_id, is_admin, username)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
 	`
 	querySettings := `
@@ -139,7 +140,7 @@ func (d *DB) CreateUser(user *user.User) (*int, error) {
 		VALUES ($1, '{}')
 	`
 	var id int
-	err := d.Conn.QueryRow(context.Background(), query, user.Email, user.PasswordHash, user.IsSso, user.SsoProviderID, user.IsAdmin).Scan(&id)
+	err := d.Conn.QueryRow(context.Background(), query, user.Email, user.PasswordHash, user.IsSso, user.SsoProviderID, user.IsAdmin, user.Username).Scan(&id)
 	if err != nil {
 		return nil, errors.New("failed to create user: " + err.Error())
 	}
@@ -468,7 +469,7 @@ func (d *DB) GetUser(email *string, id *int) (*user.User, error) {
 	case email != nil && id != nil:
 		// Both email and id are provided
 		query = `
-			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin, username
 			FROM users
 			WHERE email = $1 OR id = $2
 		`
@@ -476,7 +477,7 @@ func (d *DB) GetUser(email *string, id *int) (*user.User, error) {
 	case email != nil:
 		// Only email is provided
 		query = `
-			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin, username
 			FROM users
 			WHERE email = $1
 		`
@@ -484,7 +485,7 @@ func (d *DB) GetUser(email *string, id *int) (*user.User, error) {
 	case id != nil:
 		// Only id is provided
 		query = `
-			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+			SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin, username
 			FROM users
 			WHERE id = $1
 		`
@@ -500,6 +501,7 @@ func (d *DB) GetUser(email *string, id *int) (*user.User, error) {
 		&u.SsoUserID,
 		&u.SsoProviderID,
 		&u.IsAdmin,
+		&u.Username,
 	)
 	if err != nil {
 		return nil, errors.New("failed to get user: " + err.Error())
@@ -509,7 +511,7 @@ func (d *DB) GetUser(email *string, id *int) (*user.User, error) {
 
 func (d *DB) GetUsers() ([]*user.User, error) {
 	query := `
-		SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin
+		SELECT id, email, password_hash, is_sso, sso_user_id, sso_provider_id, is_admin, username
 		FROM users
 	`
 	rows, err := d.Conn.Query(context.Background(), query)
@@ -529,6 +531,7 @@ func (d *DB) GetUsers() ([]*user.User, error) {
 			&u.SsoUserID,
 			&u.SsoProviderID,
 			&u.IsAdmin,
+			&u.Username,
 		)
 		if err != nil {
 			return nil, errors.New("failed to scan user: " + err.Error())
@@ -659,6 +662,20 @@ func (d *DB) DeleteUserRefreshTokens(userId int) error {
 	_, err := d.Conn.Exec(context.Background(), query, userId)
 	if err != nil {
 		return errors.New("failed to delete user refresh tokens: " + err.Error())
+	}
+	return nil
+}
+
+// UpdateUserUsername updates a user's username
+func (d *DB) UpdateUserUsername(userID int, username string) error {
+	query := `
+		UPDATE users
+		SET username = $1
+		WHERE id = $2
+	`
+	_, err := d.Conn.Exec(context.Background(), query, username, userID)
+	if err != nil {
+		return errors.New("failed to update username: " + err.Error())
 	}
 	return nil
 }

@@ -283,9 +283,17 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate username
+	if len(req.Username) < 3 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Username must be at least 3 characters long"})
+		return
+	}
+
 	// Create the user
 	newUser := &user.User{
 		Email:        req.Email,
+		Username:     req.Username,
 		PasswordHash: hashedPassword,
 		IsSso:        false,
 		IsAdmin:      false,

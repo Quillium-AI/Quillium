@@ -2,7 +2,8 @@ package user
 
 // User represents a user in the system
 type User struct {
-	ID            *int     `json:"id"`
+	ID            *int    `json:"id"`
+	Username      string  `json:"username"`
 	Email         string  `json:"email"`
 	PasswordHash  *string `json:"password_hash"`
 	IsSso         bool    `json:"is_sso"`

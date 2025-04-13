@@ -46,6 +46,7 @@ func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(UserResponse{
 		ID:       *userObj.ID,
 		Email:    userObj.Email,
+		Username: userObj.Username,
 		IsAdmin:  userObj.IsAdmin,
 		IsSso:    userObj.IsSso,
 		Settings: *userSettings,
@@ -82,9 +83,21 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate username
+	username := req.Username
+	if username == "" {
+		// Use default username if not provided
+		username = "User"
+	} else if len(username) < 3 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Username must be at least 3 characters long"})
+		return
+	}
+
 	// Create the user
 	newUser := &user.User{
 		Email:        req.Email,
+		Username:     username,
 		PasswordHash: passwordHash,
 		IsAdmin:      req.IsAdmin,
 		IsSso:        false,
@@ -101,10 +114,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	newUser.ID = userID
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(UserResponse{
-		ID:      *newUser.ID,
-		Email:   newUser.Email,
-		IsAdmin: newUser.IsAdmin,
-		IsSso:   newUser.IsSso,
+		ID:       *newUser.ID,
+		Email:    newUser.Email,
+		Username: newUser.Username,
+		IsAdmin:  newUser.IsAdmin,
+		IsSso:    newUser.IsSso,
 	})
 }
 
@@ -130,10 +144,11 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	for _, u := range users {
 		if u.ID != nil {
 			userResponses = append(userResponses, UserResponse{
-				ID:      *u.ID,
-				Email:   u.Email,
-				IsAdmin: u.IsAdmin,
-				IsSso:   u.IsSso,
+				ID:       *u.ID,
+				Email:    u.Email,
+				Username: u.Username,
+				IsAdmin:  u.IsAdmin,
+				IsSso:    u.IsSso,
 			})
 		}
 	}
@@ -205,6 +220,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ID       *int    `json:"id"`
 		Email    *string `json:"email"`
+		Username *string `json:"username"`
 		Password *string `json:"password"`
 		IsAdmin  *bool   `json:"is_admin"`
 	}
@@ -269,6 +285,24 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		existingUser.Email = *req.Email
 	}
 
+	if req.Username != nil {
+		// Validate username
+		if len(*req.Username) < 3 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Username must be at least 3 characters long"})
+			return
+		}
+
+		// Update username
+		err = dbConn.UpdateUserUsername(targetUserID, *req.Username)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update username"})
+			return
+		}
+		existingUser.Username = *req.Username
+	}
+
 	if req.Password != nil {
 		// Validate password strength
 		if !user.IsValidPassword(*req.Password) {
@@ -308,9 +342,10 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Return updated user data
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(UserResponse{
-		ID:      *existingUser.ID,
-		Email:   existingUser.Email,
-		IsAdmin: existingUser.IsAdmin,
-		IsSso:   existingUser.IsSso,
+		ID:       *existingUser.ID,
+		Email:    existingUser.Email,
+		Username: existingUser.Username,
+		IsAdmin:  existingUser.IsAdmin,
+		IsSso:    existingUser.IsSso,
 	})
 }

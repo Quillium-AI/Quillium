@@ -3,17 +3,41 @@
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --primary: #8b5cf6; /* Purple */
+  --primary-dark: #7c3aed;
+  --secondary: #3b82f6; /* Blue */
+  --secondary-dark: #2563eb;
+  --accent: #6366f1; /* Indigo - mix of purple and blue */
+  --accent-dark: #4f46e5;
 }
 
-@media (preferes-color-scheme: dark){
-body{
-background-color:#0a0a0a;
-color:#ededed;
-}
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #0a0a0a;
+    color: #ededed;
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom scrollbar for a modern look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dark);
 }

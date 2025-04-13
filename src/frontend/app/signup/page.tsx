@@ -8,6 +8,7 @@ import '../globals.css';
 
 interface FormData {
   email: string;
+  username: string;
   password: string;
   confirmPassword: string;
 }
@@ -16,6 +17,7 @@ const SignUp: React.FC = () => {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     email:'',
+    username: '',
     password: '',
     confirmPassword: '',
   });
@@ -45,8 +47,14 @@ const SignUp: React.FC = () => {
     setError('');
 
     // Basic validation
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.email || !formData.username || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all fields.');
+      return;
+    }
+    
+    // Username validation
+    if (formData.username.length < 3) {
+      setError('Username must be at least 3 characters long.');
       return;
     }
 
@@ -91,6 +99,7 @@ const SignUp: React.FC = () => {
         credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
+          username: formData.username,
           password: formData.password,
         }),
       });
@@ -150,6 +159,23 @@ const SignUp: React.FC = () => {
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="example@domain.com"
               required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="username" className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="YourUsername"
+              required
+              minLength={3}
             />
           </div>
 

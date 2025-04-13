@@ -3,6 +3,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+// User information type
+type UserInfo = {
+  id?: number;
+  email: string;
+  username: string;
+  isAdmin?: boolean;
+};
+
 type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -10,6 +18,7 @@ type AuthContextType = {
   isLoggingOut: boolean;
   isDeletingAccount: boolean;
   showConfirmation: boolean;
+  userInfo: UserInfo | null;
   setShowConfirmation: (show: boolean) => void;
   handleLogout: () => Promise<void>;
   handleDeleteAccount: () => Promise<void>;
@@ -39,6 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [tokenRefreshTimer, setTokenRefreshTimer] = useState<NodeJS.Timeout | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   // Refresh token function - attempts to get a new access token using the refresh token
   const refreshToken = useCallback(async (): Promise<boolean> => {
@@ -112,7 +122,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
         if (response.ok) {
-          // User is authenticated, show dashboard content
+          // User is authenticated, parse user data
+          const userData = await response.json();
+          setUserInfo({
+            id: userData.id,
+            email: userData.email,
+            username: userData.username || 'User', // Fallback if username is not available
+            isAdmin: userData.is_admin
+          });
           setIsAuthenticated(true);
         } else if (response.status === 401) {
           // Token expired, try to refresh it
@@ -209,6 +226,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoggingOut,
     isDeletingAccount,
     showConfirmation,
+    userInfo,
     setShowConfirmation,
     handleLogout,
     handleDeleteAccount,

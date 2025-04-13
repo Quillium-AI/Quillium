@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "./components/AuthProvider";
 import { WebSocketProvider } from "./components/WebSocketProvider";
-import ChatInterface from "./components/ChatInterface";
+import HomePage from "./components/HomePage";
 import './globals.css';
 
 // Note: Types are defined in the ChatInterface component
@@ -61,10 +61,10 @@ function AppContent() {
     );
   }
 
-  // Dashboard content (authenticated user) with chat interface
+  // Dashboard content (authenticated user) with homepage
   return (
     <WebSocketProvider>
-      <ChatInterface />
+      <HomePage />
     </WebSocketProvider>
   );
 }

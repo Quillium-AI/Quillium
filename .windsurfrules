@@ -8,3 +8,4 @@
 8. Always check if a directory already exists before creating it
 9. Never edit any Files outside of the Users request without any reason
 10. Always follow eslint rules
+11. Always use pnpm for the frontend

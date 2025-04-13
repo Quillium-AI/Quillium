@@ -26,6 +26,7 @@ type APIKeyResponse struct {
 // SignupRequest represents a signup request
 type SignupRequest struct {
 	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -33,6 +34,7 @@ type SignupRequest struct {
 type UserResponse struct {
 	ID       int                   `json:"id"`
 	Email    string                `json:"email"`
+	Username string                `json:"username"`
 	IsAdmin  bool                  `json:"is_admin"`
 	IsSso    bool                  `json:"is_sso"`
 	Settings settings.UserSettings `json:"settings"`
@@ -41,6 +43,7 @@ type UserResponse struct {
 // CreateUserRequest represents a request to create a new user
 type CreateUserRequest struct {
 	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 	IsAdmin  bool   `json:"is_admin"`
 }
