@@ -13,6 +13,9 @@ RUN pnpm install --frozen-lockfile
 # Copy the rest of the frontend code
 COPY src/frontend/ ./
 
+# Copy environment variables
+COPY .env .
+
 # Build the Next.js application
 RUN pnpm build
 

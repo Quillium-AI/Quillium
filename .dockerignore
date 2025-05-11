@@ -16,9 +16,6 @@
 bin/
 tmp/
 
-# Environment variables
-.env
-
 # Node.js
 node_modules/
 npm-debug.log*
@@ -44,7 +41,7 @@ logs/
 *.log
 
 # Documentation
-DOCKER_README.md
+*.md
 
 # Tests
 **/*_test.go
