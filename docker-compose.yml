@@ -1,19 +1,29 @@
 name: quillium
 
 services:
-  quillium:
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
     volumes:
       - ./data_dev:/app/data
     ports:
       - "8080:8080"
-      - "3000:3000"
     env_file:
       - .env
     depends_on:
       - postgres
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - backend
 
   postgres:
     image: postgres:17

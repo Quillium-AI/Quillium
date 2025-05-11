@@ -112,7 +112,7 @@ function SettingsContent() {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/user', {
+      const response = await fetch('http://localhost:8080/api/user/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
