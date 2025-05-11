@@ -55,44 +55,57 @@ export default function SearchBox({ onSearch }: SearchBoxProps) {
     <div className="w-full max-w-2xl mx-auto">
       <form onSubmit={handleSearch} className="relative">
         {/* Search input */}
-        <div className="relative shadow-lg">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="What do you want to know?"
-            className="w-full py-4 px-5 pr-16 rounded-full border-2 border-gray-700 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--primary)] shadow-inner transition-all duration-200"
-          />
+        <div className="relative">
+          {/* Decorative elements */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--primary)]/50 to-[var(--secondary)]/50 rounded-full opacity-0 group-focus-within:opacity-100 blur-md transition-opacity duration-300"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--secondary)]/20 rounded-full blur-md opacity-70"></div>
           
-          {/* Search button */}
-          <button 
-            type="submit"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:from-[var(--primary-dark)] hover:to-[var(--secondary-dark)] text-white transition-all duration-200 shadow-md"
-            aria-label="Search"
-          >
-            <FiSearch size={20} />
-          </button>
+          <div className="relative group">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="What do you want to know?"
+              className="w-full py-4 px-6 pr-16 rounded-full border border-gray-700/70 bg-gray-800/70 backdrop-blur-sm text-white placeholder-gray-400 focus:outline-none focus:border-[var(--primary)]/50 focus:ring-2 focus:ring-[var(--primary)]/20 shadow-inner shadow-black/10 transition-all duration-300"
+            />
+            
+            {/* Animated focus effect */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] group-focus-within:w-[90%] transition-all duration-300"></div>
+            
+            {/* Search button */}
+            <button 
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-3 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:shadow-lg hover:shadow-[var(--primary)]/20 text-white transition-all duration-200 active:scale-95"
+              aria-label="Search"
+            >
+              <FiSearch size={18} />
+            </button>
+          </div>
         </div>
         
-        {/* Quality profile dropdown - now below the search bar */}
-        <div className="mt-3 flex justify-center">
+        {/* Quality profile dropdown*/}
+        <div className="mt-2 flex justify-center">
           <div className="relative">
             <button 
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center px-4 py-2 rounded-full bg-gray-800 border border-gray-700 text-sm text-white hover:bg-gray-700 hover:border-gray-600 focus:outline-none transition-all duration-200 shadow-md"
+              className="flex items-center px-5 py-2.5 rounded-full bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 text-sm text-white hover:bg-gray-700/80 hover:border-gray-600/70 focus:outline-none transition-all duration-200 shadow-md group"
               aria-label="Select quality profile"
             >
-              {selectedProfile.icon}
-              <span className="font-medium ml-2">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--secondary)]/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative">{selectedProfile.icon}</div>
+              </div>
+              <span className="font-medium ml-2.5">
                 {selectedProfile.name}
               </span>
-              <FiChevronDown className="ml-2 text-gray-400" />
+              <FiChevronDown className="ml-2 text-gray-400 group-hover:text-white transition-colors duration-200" />
             </button>
             
             {isDropdownOpen && (
-              <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-10 overflow-hidden backdrop-blur-sm bg-opacity-95">
-                <div className="p-2">
+              <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-72 bg-gray-800/90 border border-gray-700/70 rounded-xl shadow-xl z-[100] overflow-hidden backdrop-blur-md animate-fadeIn">
+                <div className="absolute inset-0 bg-gradient-to-b from-[var(--primary)]/5 to-[var(--secondary)]/5 opacity-70"></div>
+                <div className="p-3 relative">
                   {qualityProfiles.map((profile) => (
                     <button
                       key={profile.id}
@@ -101,18 +114,18 @@ export default function SearchBox({ onSearch }: SearchBoxProps) {
                         setSelectedProfile(profile);
                         setIsDropdownOpen(false);
                       }}
-                      className={`flex items-center w-full rounded-lg px-3 py-2.5 mb-1 last:mb-0 transition-all duration-200 ${
+                      className={`flex items-center w-full rounded-lg px-4 py-3 mb-1.5 last:mb-0 transition-all duration-200 group/item ${
                         profile.id === selectedProfile.id 
-                          ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] bg-opacity-20 text-white' 
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          ? 'bg-gradient-to-r from-[var(--primary)]/20 to-[var(--secondary)]/10 text-white border-l-2 border-[var(--primary)]' 
+                          : 'text-gray-300 hover:bg-gray-700/60 hover:text-white'
                       }`}
                     >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-700 mr-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700/80 mr-4 group-hover/item:scale-110 transition-transform duration-200">
                         {profile.icon}
                       </div>
                       <div className="text-left">
-                        <div className="font-medium">{profile.name}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">{profile.description}</div>
+                        <div className="font-medium group-hover/item:translate-x-1 transition-transform duration-200">{profile.name}</div>
+                        <div className="text-xs text-gray-400 mt-1 group-hover/item:translate-x-1 transition-transform duration-200">{profile.description}</div>
                       </div>
                     </button>
                   ))}
