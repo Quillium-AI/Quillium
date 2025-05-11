@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
-import { FiUser, FiMail, FiLock, FiSave, FiSettings } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiSave, FiSettings, FiHome } from 'react-icons/fi';
 
 // Main settings page component
 export default function SettingsPage() {
@@ -146,7 +146,9 @@ function SettingsContent() {
     handleLogout();
   };
 
-
+  const navigateToHome = () => {
+    router.push('/');
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
@@ -175,6 +177,16 @@ function SettingsContent() {
             ))}
           </ul>
         </nav>
+        <div className="p-2 mt-4">
+          <button
+            onClick={navigateToHome}
+            className="w-full flex items-center px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-700 hover:text-white"
+            style={{ cursor: 'pointer' }}
+          >
+            <span className="mr-3"><FiHome /></span>
+            <span>Back to Home</span>
+          </button>
+        </div>
       </div>
 
       {/* Main content area */}
