@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strings"
+	"os"
 )
 
 // CORSType represents the type of CORS configuration to apply
@@ -15,7 +16,7 @@ const (
 	CORSTypeLocal
 )
 
-allowedFrontend := os.Getenv("FRONTEND_URL")
+var allowedFrontend string = os.Getenv("FRONTEND_URL")
 
 // Allowed origins for local CORS
 var allowedLocalOrigins = []string{
