@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { getApiUrl } from "../utils/getApiUrl";
 
 // User information type
 type UserInfo = {
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Refresh token function - attempts to get a new access token using the refresh token
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:8080/api/auth/refresh', {
+      const response = await fetch(`${getApiUrl()}/api/auth/refresh`, {
         method: 'POST',
         credentials: 'include', // Important: include credentials to send cookies
         headers: {
@@ -110,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         // Try to fetch user data from the backend using the cookie
-        const fetchPromise = fetch('http://localhost:8080/api/user/info', {
+        const fetchPromise = fetch(`${getApiUrl()}/api/user/info`, {
           method: 'GET',
           credentials: 'include', // Important: include credentials to send cookies
           headers: {
@@ -164,7 +165,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoggingOut(true);
       setError(null);
 
-      const response = await fetch('http://localhost:8080/api/auth/logout', {
+      const response = await fetch(`${getApiUrl()}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include', // Important: include credentials to send cookies
         headers: {
@@ -193,7 +194,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsDeletingAccount(true);
       setError(null);
 
-      const response = await fetch('http://localhost:8080/api/user/delete', {
+      const response = await fetch(`${getApiUrl()}/api/user/delete`, {
         method: 'DELETE',
         credentials: 'include', // Include credentials to send cookies
         headers: {

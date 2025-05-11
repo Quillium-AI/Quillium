@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiAlertCircle, FiLogIn, FiUserPlus, FiCheckSquare } from 'react-icons/fi';
 import '../globals.css';
+import { getApiUrl } from '../utils/getApiUrl';
 
 interface FormData {
   email: string;
@@ -50,7 +51,7 @@ const SignIn: React.FC = () => {
 
       // For development/testing purposes - check if backend is available
       try {
-        const response = await fetch('http://localhost:8080/api/healthz', {
+        const response = await fetch(`${getApiUrl()}/api/healthz`, {
           method: 'GET',
           credentials: 'include'
         });
@@ -65,7 +66,7 @@ const SignIn: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch(`${getApiUrl()}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

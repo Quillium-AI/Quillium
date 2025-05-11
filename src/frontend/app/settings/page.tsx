@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
 import { FiUser, FiMail, FiLock, FiSave, FiSettings, FiHome, FiShield, FiAlertCircle, FiCheckCircle, FiInfo } from 'react-icons/fi';
+import { getApiUrl } from '../utils/getApiUrl';
 
 // Main settings page component
 export default function SettingsPage() {
@@ -143,7 +144,7 @@ function SettingsContent() {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/user/update', {
+      const response = await fetch(`${getApiUrl()}/api/user/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

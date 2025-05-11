@@ -15,10 +15,11 @@ const (
 	CORSTypeLocal
 )
 
+allowedFrontend := os.Getenv("FRONTEND_URL")
+
 // Allowed origins for local CORS
 var allowedLocalOrigins = []string{
-	"http://localhost:3000",
-	"http://127.0.0.1:3000",
+	allowedFrontend,
 }
 
 // IsOriginAllowed checks if the given origin is allowed for the specified CORS type
@@ -62,7 +63,7 @@ func WithCORSType(corsType CORSType, next http.HandlerFunc) http.HandlerFunc {
 			// Restrict to localhost only
 			if origin == "" {
 				// No origin header, use default
-				w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+				w.Header().Set("Access-Control-Allow-Origin", allowedLocalOrigins[0])
 			} else {
 				// Check if origin is allowed
 				allowed := false

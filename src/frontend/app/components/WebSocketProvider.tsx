@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiUrl } from "../utils/getApiUrl";
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 
 // Define message types for better type safety
@@ -38,12 +39,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       try {
         // First, ensure we're authenticated by making a request to the user info endpoint
         // This will set the cookie if it's not already set
-        await fetch('http://localhost:8080/api/user/info', {
+        await fetch(`${getApiUrl()}/api/user/info`, {
           credentials: 'include'
         });
         
         // Now connect to WebSocket - cookies will be sent automatically
-        const ws = new WebSocket('ws://localhost:8080/ws');
+        const ws = new WebSocket(`${getApiUrl()}/ws`);
         wsRef.current = ws;
 
         ws.onopen = () => {
