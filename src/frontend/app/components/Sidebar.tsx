@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
-import { FiSettings, FiX, FiHome, FiMessageSquare, FiMenu, FiChevronLeft, FiZap, FiStar } from 'react-icons/fi';
+import { FiSettings, FiX, FiHome, FiMessageSquare, FiMenu, FiChevronLeft, FiZap, FiStar, FiShield } from 'react-icons/fi';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -118,6 +118,26 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                 </div>
                 {!isCollapsed && <span className="font-medium group-hover:translate-x-1 transition-transform duration-200">My Chats</span>}
               </button>
+
+              {!isCollapsed && userInfo?.isAdmin && (
+                <div className="mb-4 pl-3">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Admin</p>
+                  <div className="mt-1 h-[1px] w-12 bg-gradient-to-r from-[var(--primary)]/50 to-transparent"></div>
+                </div>
+              )}
+
+              {userInfo?.isAdmin && (
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="w-full px-4 py-3 rounded-xl flex items-center hover:bg-gray-700/50 transition-all duration-200 group relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--secondary)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10 flex items-center">
+                    <FiShield className={`${isCollapsed ? '' : 'mr-4'} text-[var(--secondary)] relative z-10 transition-transform duration-200 group-hover:scale-110`} size={22} />
+                  </div>
+                  {!isCollapsed && <span className="font-medium group-hover:translate-x-1 transition-transform duration-200">Admin</span>}
+                </button>
+              )}
             </div>
           </nav>
 

@@ -49,7 +49,6 @@ const SignIn: React.FC = () => {
     try {
       setLoading(true);
 
-      // For development/testing purposes - check if backend is available
       try {
         const response = await fetch(`${getApiUrl()}/api/healthz`, {
           method: 'GET',
@@ -175,22 +174,21 @@ const SignIn: React.FC = () => {
           </div>
 
           <div className="mb-8 flex items-center">
-            <div className="relative flex items-center">
+            <label className="relative flex items-center cursor-pointer select-none">
               <input
                 type="checkbox"
                 id="rememberMe"
                 name="rememberMe"
                 checked={formData.rememberMe}
                 onChange={handleChange}
-                className="peer sr-only"
+                className="peer absolute opacity-0 h-5 w-5 cursor-pointer"
+                tabIndex={0}
               />
               <div className="h-5 w-5 rounded border border-gray-500 peer-checked:bg-[var(--primary)] peer-checked:border-[var(--primary)] flex items-center justify-center transition-all duration-200">
                 {formData.rememberMe && <FiCheckSquare className="text-white" size={14} />}
               </div>
-              <label htmlFor="rememberMe" className="ml-3 block text-sm text-gray-300 cursor-pointer">
-                Remember me
-              </label>
-            </div>
+              <span className="ml-3 block text-sm text-gray-300">Remember me</span>
+            </label>
           </div>
 
           <button
