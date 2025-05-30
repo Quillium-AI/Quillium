@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
 import { FiUsers, FiSettings, FiHome, FiShield, FiAlertCircle, FiServer, FiDatabase, FiSliders, FiActivity } from 'react-icons/fi';
-import { getApiUrl } from '../utils/getApiUrl';
+import WebcrawlerDashboard from '../components/WebcrawlerDashboard';
 
 // Main admin settings page component
 export default function AdminSettingsPage() {
@@ -35,7 +35,8 @@ function AdminSettingsContent() {
   const sidebarItems = [
     { id: 'users', label: 'User Management', icon: <FiUsers /> },
     { id: 'system', label: 'System Settings', icon: <FiServer /> },
-    { id: 'logs', label: 'Activity Logs', icon: <FiActivity /> }
+    { id: 'logs', label: 'Activity Logs', icon: <FiActivity /> },
+    { id: 'webcrawler', label: 'Webcrawler', icon: <FiDatabase /> }
   ];
 
   // Loading state while checking authentication
@@ -317,6 +318,19 @@ function AdminSettingsContent() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeSection === 'webcrawler' && (
+              <div className="relative">
+                <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent flex items-center">
+                  <div className="mr-4 p-2 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-lg">
+                    <FiDatabase className="text-[var(--primary)]" size={24} />
+                  </div>
+                  Webcrawler Dashboard
+                </h1>
+
+                <WebcrawlerDashboard />
               </div>
             )}
           </div>

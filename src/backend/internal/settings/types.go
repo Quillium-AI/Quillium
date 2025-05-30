@@ -13,4 +13,5 @@ type AdminSettings struct {
 	LLMProfileBalanced      string `json:"llm_profile_balanced"`
 	LLMProfileQuality       string `json:"llm_profile_quality"`
 	EnableSignUps           bool   `json:"enable_sign_ups"`
+	WebcrawlerURL           string `json:"webcrawler_url"`
 }

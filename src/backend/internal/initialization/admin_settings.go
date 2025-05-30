@@ -29,6 +29,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 			LLMProfileBalanced: "gpt-4o",
 			LLMProfileQuality:  "gpt-4o",
 			EnableSignUps:      true,
+			WebcrawlerURL:      "", // Default empty, will be set via environment or admin panel
 		}
 		settingsUpdated = true
 	}
@@ -109,6 +110,14 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 		adminSettings.EnableSignUps = enableSignUpsBool
 		settingsUpdated = true
 		log.Println("Updated enable signups setting from environment variable")
+	}
+
+	// Webcrawler URL
+	webcrawlerURL := os.Getenv("WEBCRAWLER_URL")
+	if webcrawlerURL != "" {
+		adminSettings.WebcrawlerURL = webcrawlerURL
+		settingsUpdated = true
+		log.Println("Updated Webcrawler URL from environment variable")
 	}
 
 	// Save settings if they were updated
