@@ -23,13 +23,16 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 
 		// Create default settings
 		adminSettings = &settings.AdminSettings{
-			FirecrawlBaseURL:   "https://api.firecrawl.dev",
-			OpenAIBaseURL:      "https://api.openai.com",
-			LLMProfileSpeed:    "gpt-3.5-turbo",
-			LLMProfileBalanced: "gpt-4o",
-			LLMProfileQuality:  "gpt-4o",
-			EnableSignUps:      true,
-			WebcrawlerURL:      "", // Default empty, will be set via environment or admin panel
+			FirecrawlBaseURL:      "https://api.firecrawl.dev",
+			OpenAIBaseURL:         "https://api.openai.com",
+			LLMProfileSpeed:       "gpt-3.5-turbo",
+			LLMProfileBalanced:    "gpt-4o",
+			LLMProfileQuality:     "gpt-4o",
+			EnableSignUps:         true,
+			WebcrawlerURL:         "",
+			ElasticsearchURL:      "",
+			ElasticsearchUsername: "",
+			ElasticsearchPassword: "",
 		}
 		settingsUpdated = true
 	}
@@ -118,6 +121,30 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 		adminSettings.WebcrawlerURL = webcrawlerURL
 		settingsUpdated = true
 		log.Println("Updated Webcrawler URL from environment variable")
+	}
+
+	// Elasticsearch URL
+	elasticsearchURL := os.Getenv("ELASTICSEARCH_URL")
+	if elasticsearchURL != "" {
+		adminSettings.ElasticsearchURL = elasticsearchURL
+		settingsUpdated = true
+		log.Println("Updated Elasticsearch URL from environment variable")
+	}
+
+	// Elasticsearch Username
+	elasticsearchUsername := os.Getenv("ELASTICSEARCH_USERNAME")
+	if elasticsearchUsername != "" {
+		adminSettings.ElasticsearchUsername = elasticsearchUsername
+		settingsUpdated = true
+		log.Println("Updated Elasticsearch username from environment variable")
+	}
+
+	// Elasticsearch Password
+	elasticsearchPassword := os.Getenv("ELASTICSEARCH_PASSWORD")
+	if elasticsearchPassword != "" {
+		adminSettings.ElasticsearchPassword = elasticsearchPassword
+		settingsUpdated = true
+		log.Println("Updated Elasticsearch password from environment variable")
 	}
 
 	// Save settings if they were updated

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
-import { FiUsers, FiSettings, FiHome, FiShield, FiAlertCircle, FiServer, FiDatabase, FiSliders, FiActivity } from 'react-icons/fi';
+import { FiUsers, FiSettings, FiHome, FiShield, FiAlertCircle, FiServer, FiDatabase, FiSliders, FiActivity, FiSearch } from 'react-icons/fi';
 import WebcrawlerDashboard from '../components/WebcrawlerDashboard';
+import IndexerDashboard from '../components/IndexerDashboard';
 
 // Main admin settings page component
 export default function AdminSettingsPage() {
@@ -36,7 +37,8 @@ function AdminSettingsContent() {
     { id: 'users', label: 'User Management', icon: <FiUsers /> },
     { id: 'system', label: 'System Settings', icon: <FiServer /> },
     { id: 'logs', label: 'Activity Logs', icon: <FiActivity /> },
-    { id: 'webcrawler', label: 'Webcrawler', icon: <FiDatabase /> }
+    { id: 'webcrawler', label: 'Webcrawler', icon: <FiDatabase /> },
+    { id: 'indexer', label: 'Elasticsearch Indexer', icon: <FiSearch /> }
   ];
 
   // Loading state while checking authentication
@@ -331,6 +333,19 @@ function AdminSettingsContent() {
                 </h1>
 
                 <WebcrawlerDashboard />
+              </div>
+            )}
+
+            {activeSection === 'indexer' && (
+              <div className="relative">
+                <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent flex items-center">
+                  <div className="mr-4 p-2 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-lg">
+                    <FiSearch className="text-[var(--primary)]" size={24} />
+                  </div>
+                  Elasticsearch Indexer Dashboard
+                </h1>
+
+                <IndexerDashboard />
               </div>
             )}
           </div>

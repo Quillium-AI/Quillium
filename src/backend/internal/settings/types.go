@@ -14,4 +14,7 @@ type AdminSettings struct {
 	LLMProfileQuality       string `json:"llm_profile_quality"`
 	EnableSignUps           bool   `json:"enable_sign_ups"`
 	WebcrawlerURL           string `json:"webcrawler_url"`
+	ElasticsearchURL        string `json:"elasticsearch_url"`
+	ElasticsearchUsername   string `json:"elasticsearch_username"`
+	ElasticsearchPassword   string `json:"elasticsearch_password"`
 }
