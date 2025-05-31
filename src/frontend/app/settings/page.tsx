@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
 import { FiUser, FiMail, FiLock, FiSave, FiSettings, FiHome, FiShield, FiAlertCircle, FiCheckCircle, FiInfo } from 'react-icons/fi';
-import { getApiUrl } from '../utils/getApiUrl';
+import { fetchApi } from '../utils/apiClient';
 
 // Main settings page component
 export default function SettingsPage() {
@@ -28,6 +28,8 @@ export default function SettingsPage() {
 function SettingsContent() {
   const router = useRouter();
   const { userInfo, isAuthenticated, isLoading, error, handleLogout } = useAuth();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,7 +43,7 @@ function SettingsContent() {
     { id: 'profile', label: 'Profile', icon: <FiUser /> },
     { id: 'account', label: 'Account', icon: <FiSettings /> }
   ];
-  
+
   // Loading state while checking authentication
   if (isLoading) {
     return (
@@ -102,7 +104,7 @@ function SettingsContent() {
       </div>
     );
   }
-  
+
   // Initialize form data from user info
   if (userInfo && username === '' && email === '') {
     setUsername(userInfo.username || '');
@@ -124,15 +126,15 @@ function SettingsContent() {
     try {
       // Prepare update data
       const updateData: { username?: string; email?: string; password?: string } = {};
-      
+
       if (username && username !== userInfo?.username) {
         updateData.username = username;
       }
-      
+
       if (email && email !== userInfo?.email) {
         updateData.email = email;
       }
-      
+
       if (password) {
         updateData.password = password;
       }
@@ -144,7 +146,7 @@ function SettingsContent() {
         return;
       }
 
-      const response = await fetch(`${getApiUrl()}/api/user/update`, {
+      const response = await fetchApi('/api/user/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +163,7 @@ function SettingsContent() {
       // Clear password fields
       setPassword('');
       setConfirmPassword('');
-      
+
       setMessage({ text: 'Profile updated successfully', type: 'success' });
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -176,6 +178,31 @@ function SettingsContent() {
 
   const handleUserLogout = () => {
     handleLogout();
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      const response = await fetchApi('/api/user/delete', {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Account deleted successfully, redirect to signup page
+        router.push('/signup');
+      } else {
+        // Handle error
+        const data = await response.json();
+        displayMessage(data.error || 'Failed to delete account. Please try again.', 'error');
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      displayMessage('Network error: Cannot connect to the server.', 'error');
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   const navigateToHome = () => {
@@ -289,7 +316,7 @@ function SettingsContent() {
                       <span className="text-[var(--primary)] mr-3"><FiUser /></span>
                       Personal Information
                     </h2>
-                
+
                     <form onSubmit={handleSubmit}>
                       <div className="space-y-8">
                         <div className="group">
@@ -309,7 +336,7 @@ function SettingsContent() {
                             />
                           </div>
                         </div>
-                        
+
                         <div className="group">
                           <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-300 group-focus-within:text-[var(--primary)] transition-colors duration-200">Email Address</label>
                           <div className="relative">
@@ -326,15 +353,15 @@ function SettingsContent() {
                             />
                           </div>
                         </div>
-                        
+
                         <div className="pt-8 mt-8 border-t border-gray-700/50 relative">
                           <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-[var(--primary)]/30 via-transparent to-transparent"></div>
-                          
+
                           <h3 className="text-lg font-medium mb-6 flex items-center">
                             <span className="text-[var(--primary)] mr-3"><FiShield /></span>
                             Change Password
                           </h3>
-                          
+
                           <div className="space-y-6">
                             <div className="group">
                               <label htmlFor="password" className="block text-sm font-medium mb-2 text-gray-300 group-focus-within:text-[var(--primary)] transition-colors duration-200">New Password</label>
@@ -354,7 +381,7 @@ function SettingsContent() {
                               </div>
                               <p className="mt-2 text-xs text-gray-400">Must be at least 8 characters</p>
                             </div>
-                            
+
                             <div className="group">
                               <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2 text-gray-300 group-focus-within:text-[var(--primary)] transition-colors duration-200">Confirm New Password</label>
                               <div className="relative">
@@ -374,7 +401,7 @@ function SettingsContent() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="pt-8 mt-2">
                           <button
                             type="submit"
@@ -412,7 +439,7 @@ function SettingsContent() {
                   </div>
                   Account Settings
                 </h1>
-                
+
                 <div className="bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-gray-700/50 relative">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--primary)] to-transparent"></div>
                   <div className="p-8">
@@ -420,7 +447,7 @@ function SettingsContent() {
                       <span className="text-[var(--primary)] mr-3"><FiSettings /></span>
                       Account Management
                     </h2>
-                    
+
                     <div className="space-y-6">
                       <div className="flex items-center justify-between p-6 bg-gray-700/40 rounded-xl border border-gray-600/30 hover:border-gray-600/50 transition-colors duration-200 backdrop-blur-sm relative overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -428,26 +455,50 @@ function SettingsContent() {
                           <h3 className="font-medium text-lg">Sign out</h3>
                           <p className="text-sm text-gray-400 mt-1">Sign out from all devices</p>
                         </div>
-                        <button 
+                        <button
                           onClick={handleUserLogout}
                           className="relative z-10 px-5 py-2.5 border-2 border-blue-500/70 text-blue-400 rounded-xl hover:bg-blue-500/20 active:scale-95 transition-all duration-200 flex items-center group/btn"
                         >
                           <span className="group-hover/btn:translate-x-1 transition-transform duration-200">Sign out</span>
                         </button>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-6 bg-gray-700/40 rounded-xl border border-gray-600/30 hover:border-red-500/30 transition-colors duration-200 backdrop-blur-sm relative overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="relative z-10">
                           <h3 className="font-medium text-lg text-red-400">Delete account</h3>
                           <p className="text-sm text-gray-400 mt-1">Permanently delete your account and all data</p>
                         </div>
-                        <button 
-                          className="relative z-10 px-5 py-2.5 bg-red-500/80 text-white rounded-xl hover:bg-red-600/80 active:scale-95 transition-all duration-200 flex items-center shadow-lg shadow-red-500/20 group/btn"
-                          onClick={() => displayMessage('Account deletion is not available in this version.', 'info')}
-                        >
-                          <span className="group-hover/btn:translate-x-1 transition-transform duration-200">Delete account</span>
-                        </button>
+                        {!showDeleteConfirm ? (
+                          <button
+                            className="relative z-10 px-5 py-2.5 bg-red-500/80 text-white rounded-xl hover:bg-red-600/80 active:scale-95 transition-all duration-200 flex items-center shadow-lg shadow-red-500/20 group/btn"
+                            onClick={() => setShowDeleteConfirm(true)}
+                          >
+                            <span className="group-hover/btn:translate-x-1 transition-transform duration-200">Delete account</span>
+                          </button>
+                        ) : (
+                          <div className="flex space-x-2">
+                            <button
+                              className="relative z-10 px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 active:scale-95 transition-all duration-200 text-sm"
+                              onClick={() => setShowDeleteConfirm(false)}
+                              disabled={isDeleting}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              className="relative z-10 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 active:scale-95 transition-all duration-200 text-sm flex items-center justify-center"
+                              onClick={handleDeleteAccount}
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                  Deleting...
+                                </>
+                              ) : 'Confirm Delete'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {  FiAlertCircle, FiUserPlus, FiLogIn } from 'react-icons/fi';
 import '../globals.css';
-import { getApiUrl } from '../utils/getApiUrl';
+import { fetchApi } from '../utils/apiClient';
 
 
 interface FormData {
@@ -75,13 +75,12 @@ const SignUp: React.FC = () => {
 
       // For development/testing purposes - check if backend is available
       try {
-        const response = await fetch(`${getApiUrl()}/api/healthz`, {
-          method: 'GET',
-          credentials: 'include'
+        const healthResponse = await fetchApi('/api/healthz', {
+          method: 'GET'
         });
 
-        if (!response.ok) {
-          console.warn('Backend health check failed:', response.status);
+        if (!healthResponse.ok) {
+          console.warn('Backend health check failed:', healthResponse.status);
         }
       } catch (healthError) {
         console.error('Backend server may not be running:', healthError);
@@ -91,14 +90,11 @@ const SignUp: React.FC = () => {
       }
 
       // API Endpoints defined
-      const response = await fetch(`${getApiUrl()}/api/auth/signup`, {
+      const response = await fetchApi('/api/auth/signup', {
         method:'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
-        // Important: include credentials to receive and send cookies
-        credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
           username: formData.username,

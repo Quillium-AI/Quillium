@@ -1,13 +1,14 @@
 "use client";
 
-import { getApiUrl } from "../utils/getApiUrl";
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { fetchApi } from '../utils/apiClient';
+import { io, Socket } from 'socket.io-client';
 
 // Define message types for better type safety
-type WebSocketMessage = {
+interface WebSocketMessage {
   type: string;
-  content: Record<string, unknown>;
-};
+  payload: any;
+}
 
 type WebSocketContextType = {
   isConnected: boolean;
@@ -15,7 +16,11 @@ type WebSocketContextType = {
   lastMessage: WebSocketMessage | null;
 };
 
-const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
+const WebSocketContext = createContext<WebSocketContextType>({
+  isConnected: false,
+  lastMessage: null,
+  sendMessage: () => { }, // Empty function as default
+});
 
 export function useWebSocket() {
   const context = useContext(WebSocketContext);
@@ -32,83 +37,87 @@ type WebSocketProviderProps = {
 export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const connectWebSocket = async () => {
+    const connectSocketIO = async () => {
       try {
         // First, ensure we're authenticated by making a request to the user info endpoint
         // This will set the cookie if it's not already set
-        await fetch(`${getApiUrl()}/api/user/info`, {
-          credentials: 'include'
+        await fetchApi('/api/user/info');
+
+        // Connect to Socket.IO server - using standard Socket.IO path
+        const socket = io({
+          path: '/socket.io',
+          autoConnect: true,
+          withCredentials: true,  // Important for passing cookies
+          reconnection: true,
+          reconnectionAttempts: 5,
+          transports: ['polling', 'websocket'] // Start with polling (more compatible) then upgrade
         });
-        
-        // Now connect to WebSocket - cookies will be sent automatically
-        const ws = new WebSocket(`${getApiUrl()}/ws`);
-        wsRef.current = ws;
 
-        ws.onopen = () => {
-          // Minimal logging
+        socketRef.current = socket;
+
+        // Handle connection events
+        socket.on('connect', () => {
+          console.log('Socket.IO connected');
           setIsConnected(true);
-        };
+        });
 
-        ws.onclose = () => {
+        socket.on('disconnect', () => {
+          console.log('Socket.IO disconnected');
           setIsConnected(false);
-          // Try to reconnect after a delay
-          setTimeout(connectWebSocket, 3000);
-        };
+        });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        ws.onerror = (_error) => {
-          // Error handling without logging
-        };
+        socket.on('error', (error) => {
+          console.error('Socket.IO error:', error);
+        });
 
-        ws.onmessage = (event) => {
+        socket.on('backendDisconnected', () => {
+          console.log('Backend disconnected, waiting for reconnection');
+        });
+
+        // Handle incoming messages
+        socket.on('message', (messageData) => {
           try {
-            // Trim any extra characters that might cause parsing issues
-            const trimmedData = String(event.data).trim();
-            
-            // Skip empty messages
-            if (!trimmedData) return;
-            
-            const data = JSON.parse(trimmedData) as WebSocketMessage;
-            // Set the message without any logging
-            setLastMessage(data);
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          } catch (_error) {
-            // Silent error handling - no logging
+            // Handle incoming messages from the server
+            // The server already parsed the JSON for us
+            setLastMessage(messageData as WebSocketMessage);
+          } catch (e) {
+            console.error('Error handling Socket.IO message:', e);
           }
-        };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_error) {
-        // Error handling without logging
-        // Try to reconnect after a delay
-        setTimeout(connectWebSocket, 3000);
+        });
+      } catch (error) {
+        console.error('Socket.IO connection error:', error);
+        // Socket.IO has built-in reconnection, but we can force it after errors
+        setTimeout(() => {
+          if (socketRef.current) {
+            socketRef.current.connect();
+          } else {
+            connectSocketIO();
+          }
+        }, 5000);
       }
     };
 
-    connectWebSocket();
+    // Start the Socket.IO connection
+    connectSocketIO();
 
-    // Clean up WebSocket on unmount
+    // Cleanup when component unmounts
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
       }
     };
   }, []);
 
+  // Function to send messages through Socket.IO
   const sendMessage = (message: WebSocketMessage) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      // Debug what we're sending
-      console.log('Sending WebSocket message:', message);
-      
-      // Check if messages array is being sent correctly
-      if (message.type === 'chat_request') {
-        console.log('Messages array:', message.content.messages);
-      }
-      
-      wsRef.current.send(JSON.stringify(message));
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('message', message);
     } else {
+      console.warn('Socket not connected, message not sent');
       // WebSocket not connected - no logging
       console.warn('WebSocket not connected when trying to send message');
     }

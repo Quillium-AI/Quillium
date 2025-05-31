@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FiCheckCircle, FiAlertCircle, FiBarChart2, FiRefreshCw } from 'react-icons/fi';
-import { getApiUrl } from '../utils/getApiUrl';
-
-interface AdminSettings {
-  webcrawler_url: string;
-}
+import { fetchApi } from '../utils/apiClient';
 
 interface MetricsData {
   pages_crawled: number;
@@ -24,7 +20,6 @@ interface HealthStatus {
 }
 
 export default function WebcrawlerDashboard() {
-  const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
@@ -34,28 +29,20 @@ export default function WebcrawlerDashboard() {
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch admin settings to get webcrawler URL
+  // Initial data fetch
   useEffect(() => {
-    const fetchAdminSettings = async () => {
-      try {
-        const response = await fetch(`${getApiUrl()}/api/admin/settings/get`, {
-          credentials: 'include'
-        });
+    fetchWebcrawlerData();
+  }, []);
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch admin settings: ${response.status}`);
-        }
+  // Set up auto-refresh
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      fetchWebcrawlerData();
+    }, 30000); // Refresh every 30 seconds
 
-        const data = await response.json();
-        setSettings(data);
-      } catch (err) {
-        setError(`Error fetching webcrawler settings: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      clearInterval(refreshInterval);
     };
-
-    fetchAdminSettings();
   }, []);
 
   // Parse Prometheus metrics text format
@@ -72,12 +59,12 @@ export default function WebcrawlerDashboard() {
     };
 
     const lines = metricsText.split('\n');
-    
+
     // Extract metrics from the Prometheus format
     for (const line of lines) {
       // Skip comments and empty lines
       if (line.startsWith('#') || line.trim() === '') continue;
-      
+
       // Parse crawler_pages_crawled_total
       if (line.startsWith('crawler_pages_crawled_total')) {
         const match = line.match(/crawler_pages_crawled_total\s+(\d+)/);
@@ -85,7 +72,7 @@ export default function WebcrawlerDashboard() {
           result.pages_crawled = parseInt(match[1], 10);
         }
       }
-      
+
       // Parse crawler_request_errors_total for failed pages
       else if (line.startsWith('crawler_request_errors_total')) {
         const match = line.match(/crawler_request_errors_total\s+(\d+)/);
@@ -93,7 +80,7 @@ export default function WebcrawlerDashboard() {
           result.pages_failed = parseInt(match[1], 10);
         }
       }
-      
+
       // Parse crawler_active_crawlers
       else if (line.startsWith('crawler_active_crawlers')) {
         const match = line.match(/crawler_active_crawlers\s+(\d+)/);
@@ -101,87 +88,49 @@ export default function WebcrawlerDashboard() {
           result.active_crawlers = parseInt(match[1], 10);
         }
       }
-      
+
       // We can calculate requests per second based on other metrics if needed
       // For now, we'll leave it at 0 or implement a calculation later
     }
-    
+
     return result;
   };
 
   // Fetch metrics from webcrawler via backend proxy
   const fetchWebcrawlerData = async () => {
-    if (!settings?.webcrawler_url) return;
-
     setIsRefreshing(true);
+    setError(null);
 
     try {
-      // Fetch metrics - now handling as text instead of JSON
-      const metricsResponse = await fetch(`${settings.webcrawler_url}/metrics`);
+      // Fetch metrics through our Next.js API route proxy
+      const metricsResponse = await fetchApi('/api/webcrawler/metrics');
       if (metricsResponse.ok) {
         const metricsText = await metricsResponse.text();
         const parsedMetrics = parsePrometheusMetrics(metricsText);
         setMetrics(parsedMetrics);
       }
 
-      // Fetch readiness status - we know it's JSON from the curl output
-      try {
-        const readyResponse = await fetch(`${settings.webcrawler_url}/readyz`);
-        if (readyResponse.ok) {
-          const readyData = await readyResponse.json();
-          setReadyStatus(readyData);
-        }
-      } catch (readyErr) {
-        console.error('Error fetching readiness status:', readyErr);
+      // Fetch health checks through our Next.js API route proxy
+      const healthResponse = await fetchApi('/api/webcrawler/health');
+      if (healthResponse.ok) {
+        const healthData = await healthResponse.json();
+        setReadyStatus(healthData.ready);
+        setLiveStatus(healthData.live);
+        setVersion(healthData.version);
+      } else {
+        setReadyStatus({ status: "error" });
+        setLiveStatus({ status: "error" });
+        setVersion("Unknown");
       }
 
-      // Fetch liveness status - we know it's JSON from the curl output
-      try {
-        const liveResponse = await fetch(`${settings.webcrawler_url}/livez`);
-        if (liveResponse.ok) {
-          const liveData = await liveResponse.json();
-          setLiveStatus(liveData);
-        }
-      } catch (liveErr) {
-        console.error('Error fetching liveness status:', liveErr);
-      }
-
-      // Fetch version - we know it's JSON from the curl output
-      try {
-        const versionResponse = await fetch(`${settings.webcrawler_url}/version`);
-        if (versionResponse.ok) {
-          const versionData = await versionResponse.json();
-          // Extract the version string from the JSON response
-          setVersion(versionData.version);
-        }
-      } catch (versionErr) {
-        console.error('Error fetching version:', versionErr);
-      }
-
-      setError(null);
+      setLoading(false);
     } catch (err) {
+      console.error('Error fetching webcrawler data:', err);
       setError(`Failed to connect to webcrawler: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsRefreshing(false);
     }
   };
-
-  // Set up auto-refresh
-  useEffect(() => {
-    if (settings?.webcrawler_url) {
-      fetchWebcrawlerData();
-
-      // Set up refresh timer (every 30 seconds)
-      const timer = setInterval(fetchWebcrawlerData, 30000);
-      setRefreshTimer(timer);
-    }
-
-    return () => {
-      if (refreshTimer) {
-        clearInterval(refreshTimer);
-      }
-    };
-  }, [settings?.webcrawler_url]);
 
   const handleRefreshClick = () => {
     fetchWebcrawlerData();
@@ -203,19 +152,6 @@ export default function WebcrawlerDashboard() {
         <div className="flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin mr-3"></div>
           <p className="text-white">Loading webcrawler data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!settings?.webcrawler_url) {
-    return (
-      <div className="bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-gray-700/50 p-8">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--primary)] to-transparent"></div>
-        <h2 className="text-xl font-semibold mb-6">Webcrawler Not Configured</h2>
-
-        <div className="p-4 bg-amber-900/30 border border-amber-700/50 rounded-lg text-amber-200">
-          <p className="flex items-center"><FiAlertCircle className="mr-2" /> Webcrawler URL is not configured. Please set the WEBCRAWLER_URL in your environment variables.</p>
         </div>
       </div>
     );
@@ -281,7 +217,7 @@ export default function WebcrawlerDashboard() {
 
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300">Version:</span>
-                  <span className="text-white">{typeof version === 'object' ? JSON.stringify(version) : version || "N/A"}</span>
+                  <span className="text-white">{version || "N/A"}</span>
                 </div>
               </div>
             </div>
@@ -346,8 +282,8 @@ export default function WebcrawlerDashboard() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-300">Connected to:</span>
-                  <span className="text-white">{settings?.webcrawler_url}</span>
+                  <span className="text-gray-300">Connection:</span>
+                  <span className="text-white">via API proxy</span>
                 </div>
               </div>
             </div>

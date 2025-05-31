@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FiCheckCircle, FiAlertCircle, FiBarChart2, FiRefreshCw } from 'react-icons/fi';
-import { getApiUrl } from '../utils/getApiUrl';
+import { fetchApi } from '../utils/apiClient';
 
 interface AdminSettings {
   elasticsearch_url: string;
@@ -76,52 +76,33 @@ export default function IndexerDashboard() {
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch admin settings to get elasticsearch URL
+  // Initial data fetch
   useEffect(() => {
-    const fetchAdminSettings = async () => {
-      try {
-        const response = await fetch(`${getApiUrl()}/api/admin/settings/get`, {
-          credentials: 'include'
-        });
+    fetchElasticsearchData();
+  }, []);
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch admin settings: ${response.status}`);
-        }
+  // Set up auto-refresh
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      fetchElasticsearchData();
+    }, 60000); // Refresh every 60 seconds
 
-        const data = await response.json();
-        setSettings(data);
-      } catch (err) {
-        setError(`Error fetching elasticsearch settings: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      clearInterval(refreshInterval);
     };
-
-    fetchAdminSettings();
   }, []);
 
   // Fetch metrics from elasticsearch via backend proxy
   const fetchElasticsearchData = async () => {
-    if (!settings?.elasticsearch_url) return;
-
     setIsRefreshing(true);
+    setError(null);
 
     try {
-      // Fetch cluster health
-      const healthResponse = await fetch(`${settings.elasticsearch_url}/_cluster/health`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Basic ${btoa(`${settings.elasticsearch_username}:${settings.elasticsearch_password}`)}`
-        }
-      });
-      
-      // Fetch node stats
-      const nodeStatsResponse = await fetch(`${settings.elasticsearch_url}/_nodes/stats`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Basic ${btoa(`${settings.elasticsearch_username}:${settings.elasticsearch_password}`)}`
-        }
-      });
+      // Fetch cluster health through our Next.js API route proxy
+      const healthResponse = await fetchApi('/api/elasticsearch/health');
+
+      // Fetch node stats through our Next.js API route proxy
+      const nodeStatsResponse = await fetchApi('/api/elasticsearch/stats');
 
       if (!healthResponse.ok) {
         throw new Error(`Failed to fetch cluster health: ${healthResponse.status}`);
@@ -143,7 +124,7 @@ export default function IndexerDashboard() {
         node_stats: firstNodeStats
       });
 
-      setError(null);
+      setLoading(false);
     } catch (err) {
       setError(`Error fetching elasticsearch data: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
@@ -324,6 +305,11 @@ export default function IndexerDashboard() {
               </div>
 
               <div className="flex items-center justify-between">
+                <span className="text-gray-300">Connection:</span>
+                <span className="text-white">via API proxy</span>
+              </div>
+
+              <div className="flex items-center justify-between">
                 <span className="text-gray-300">Nodes:</span>
                 <span className="text-white">{metrics?.cluster_health?.number_of_nodes || 0}</span>
               </div>
@@ -332,7 +318,7 @@ export default function IndexerDashboard() {
                 <span className="text-gray-300">Data Nodes:</span>
                 <span className="text-white">{metrics?.cluster_health?.number_of_data_nodes || 0}</span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-gray-300">Shards Active:</span>
                 <span className="text-white">

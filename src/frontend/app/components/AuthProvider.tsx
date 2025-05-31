@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getApiUrl } from "../utils/getApiUrl";
+import { fetchApi } from "../utils/apiClient";
 
 // User information type
 type UserInfo = {
@@ -54,12 +54,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Refresh token function - attempts to get a new access token using the refresh token
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include', // Important: include credentials to send cookies
-        headers: {
-          'Accept': 'application/json'
-        }
+      const response = await fetchApi('/api/auth/refresh', {
+        method: 'POST'
       });
 
       if (response.ok) {
@@ -111,12 +107,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         // Try to fetch user data from the backend using the cookie
-        const fetchPromise = fetch(`${getApiUrl()}/api/user/info`, {
-          method: 'GET',
-          credentials: 'include', // Important: include credentials to send cookies
-          headers: {
-            'Accept': 'application/json'
-          }
+        const fetchPromise = fetchApi('/api/user/info', {
+          method: 'GET'
         });
 
         // Race between fetch and timeout
@@ -165,12 +157,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoggingOut(true);
       setError(null);
 
-      const response = await fetch(`${getApiUrl()}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include', // Important: include credentials to send cookies
-        headers: {
-          'Accept': 'application/json'
-        }
+      const response = await fetchApi('/api/auth/logout', {
+        method: 'POST'
       });
 
       if (response.ok) {
@@ -194,12 +182,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsDeletingAccount(true);
       setError(null);
 
-      const response = await fetch(`${getApiUrl()}/api/user/delete`, {
-        method: 'DELETE',
-        credentials: 'include', // Include credentials to send cookies
-        headers: {
-          'Accept': 'application/json'
-        }
+      const response = await fetchApi('/api/user/delete', {
+        method: 'DELETE'
       });
 
       if (response.ok) {
