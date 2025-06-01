@@ -17,6 +17,7 @@ interface SystemSettings {
   elasticsearch_url: string;
   elasticsearch_username: string;
   elasticsearch_password: string;
+  env_overrides: string[];
 }
 
 export default function SystemSettings() {
@@ -31,6 +32,7 @@ export default function SystemSettings() {
     elasticsearch_url: '',
     elasticsearch_username: '',
     elasticsearch_password: '',
+    env_overrides: [],
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,11 +124,32 @@ export default function SystemSettings() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value, type } = e.target as HTMLInputElement;
+    
+    // Don't update if the field is overridden by an environment variable
+    if (isFieldOverridden(name)) return;
 
     setSettings((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     }));
+  };
+  
+  // Helper function to check if a field is overridden by environment variables
+  const isFieldOverridden = (fieldName: string): boolean => {
+    return settings.env_overrides?.includes(fieldName) || false;
+  };
+  
+  // Render a message for overridden fields
+  const renderOverrideMessage = (fieldName: string) => {
+    if (isFieldOverridden(fieldName)) {
+      return (
+        <div className="mt-1 text-amber-400 text-sm flex items-center">
+          <FiAlertCircle className="mr-1" size={14} />
+          This setting is overridden by an environment variable
+        </div>
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -163,25 +186,29 @@ export default function SystemSettings() {
             <h3 className="text-lg font-medium text-white mb-4 border-b border-gray-600/50 pb-2">API Configuration</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">OpenAI Compatiable Base URL</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">OpenAI Compatiable API Base URL</label>
                 <input
                   type="text"
-                  name="openai_comp_base_url"
+                  name="openai_base_url"
                   value={settings.openai_base_url}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('OPENAI_BASE_URL')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('OPENAI_BASE_URL') ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {renderOverrideMessage('OPENAI_BASE_URL')}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">OpenAI Compatiable API Key</label>
                 <input
                   type="password"
-                  name="openai_comp_api_key"
+                  name="openai_api_key"
                   value={settings.openai_api_key || ''}
                   onChange={handleInputChange}
                   placeholder={settings.openai_api_key_encrypt ? '••••••••••••••••••••••' : 'Enter API key'}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('OPENAI_API_KEY')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('OPENAI_API_KEY') ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {renderOverrideMessage('OPENAI_API_KEY')}
                 {settings.openai_api_key_encrypt && (
                   <p className="text-xs text-gray-400 mt-1">API key is stored securely. Enter a new key only if you want to change it.</p>
                 )}
@@ -200,9 +227,11 @@ export default function SystemSettings() {
                   name="llm_profile_speed"
                   value={settings.llm_profile_speed}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('LLM_PROFILE_SPEED')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('LLM_PROFILE_SPEED') ? 'opacity-60 cursor-not-allowed' : ''}`}
                   placeholder="e.g., gpt-4-turbo"
                 />
+                {renderOverrideMessage('LLM_PROFILE_SPEED')}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Balanced Profile</label>
@@ -211,9 +240,11 @@ export default function SystemSettings() {
                   name="llm_profile_balanced"
                   value={settings.llm_profile_balanced}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('LLM_PROFILE_BALANCED')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('LLM_PROFILE_BALANCED') ? 'opacity-60 cursor-not-allowed' : ''}`}
                   placeholder="e.g., gpt-4"
                 />
+                {renderOverrideMessage('LLM_PROFILE_BALANCED')}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Quality Profile</label>
@@ -222,9 +253,11 @@ export default function SystemSettings() {
                   name="llm_profile_quality"
                   value={settings.llm_profile_quality}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('LLM_PROFILE_QUALITY')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('LLM_PROFILE_QUALITY') ? 'opacity-60 cursor-not-allowed' : ''}`}
                   placeholder="e.g., claude-3-opus"
                 />
+                {renderOverrideMessage('LLM_PROFILE_QUALITY')}
               </div>
             </div>
           </div>
@@ -240,8 +273,10 @@ export default function SystemSettings() {
                   name="webcrawler_url"
                   value={settings.webcrawler_url}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('WEBCRAWLER_URL')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('WEBSCRAPER_URL') ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {renderOverrideMessage('WEBCRAWLER_URL')}
               </div>
             </div>
           </div>
@@ -257,8 +292,10 @@ export default function SystemSettings() {
                   name="elasticsearch_url"
                   value={settings.elasticsearch_url}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('ELASTICSEARCH_URL')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('ELASTICSEARCH_URL') ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {renderOverrideMessage('ELASTICSEARCH_URL')}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Username</label>
@@ -267,8 +304,10 @@ export default function SystemSettings() {
                   name="elasticsearch_username"
                   value={settings.elasticsearch_username}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('ELASTICSEARCH_USERNAME')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('ELASTICSEARCH_USERNAME') ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {renderOverrideMessage('ELASTICSEARCH_USERNAME')}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
@@ -277,8 +316,10 @@ export default function SystemSettings() {
                   name="elasticsearch_password"
                   value={settings.elasticsearch_password}
                   onChange={handleInputChange}
-                  className="w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none"
+                  disabled={isFieldOverridden('ELASTICSEARCH_PASSWORD')}
+                  className={`w-full bg-gray-800/70 text-white rounded-lg border border-gray-600/50 p-2.5 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none ${isFieldOverridden('ELASTICSEARCH_PASSWORD') ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {renderOverrideMessage('ELASTICSEARCH_PASSWORD')}
               </div>
             </div>
           </div>
@@ -293,8 +334,10 @@ export default function SystemSettings() {
                 type="checkbox"
                 checked={settings.enable_sign_ups}
                 onChange={handleInputChange}
-                className="w-4 h-4 text-[var(--primary)] bg-gray-800 border-gray-600 rounded focus:ring-[var(--primary)] focus:ring-opacity-25"
+                disabled={isFieldOverridden('ENABLE_SIGNUPS')}
+                className={`w-4 h-4 text-[var(--primary)] bg-gray-800 border-gray-600 rounded focus:ring-[var(--primary)] focus:ring-opacity-25 ${isFieldOverridden('ENABLE_SIGNUPS') ? 'opacity-60 cursor-not-allowed' : ''}`}
               />
+              {renderOverrideMessage('ENABLE_SIGNUPS')}
               <label htmlFor="enable_sign_ups" className="ml-2 text-sm font-medium text-gray-300">
                 Enable user sign-ups
               </label>

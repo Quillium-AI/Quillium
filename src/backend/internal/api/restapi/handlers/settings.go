@@ -71,6 +71,7 @@ func GetAdminSettings(w http.ResponseWriter, r *http.Request) {
 		"elasticsearch_url":      adminSettings.ElasticsearchURL,
 		"elasticsearch_username": adminSettings.ElasticsearchUsername,
 		"elasticsearch_password": adminSettings.ElasticsearchPassword,
+		"env_overrides":          adminSettings.EnvOverrides,
 	}
 
 	// Add indicators for API keys if they exist
@@ -120,6 +121,7 @@ func UpdateAdminSettings(w http.ResponseWriter, r *http.Request) {
 		ElasticsearchURL:      currentSettings.ElasticsearchURL,
 		ElasticsearchUsername: currentSettings.ElasticsearchUsername,
 		ElasticsearchPassword: currentSettings.ElasticsearchPassword,
+		EnvOverrides:          currentSettings.EnvOverrides,
 	}
 
 	// Handle API key encryption

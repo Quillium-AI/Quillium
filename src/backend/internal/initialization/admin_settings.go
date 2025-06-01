@@ -16,6 +16,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	// Get existing admin settings from database
 	adminSettings, err := dbConn.GetAdminSettings()
 	var settingsUpdated bool
+	var envOverrides []string
 
 	// If no settings exist or there was an error, create default settings
 	if err != nil {
@@ -32,6 +33,8 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 			ElasticsearchURL:      "",
 			ElasticsearchUsername: "",
 			ElasticsearchPassword: "",
+			EnvOverrides:          []string{},
+
 		}
 		settingsUpdated = true
 	}
@@ -45,6 +48,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 		} else if encryptedKey != nil {
 			adminSettings.OpenAIAPIKey_encrypt = *encryptedKey // Dereference the pointer
 			settingsUpdated = true
+			envOverrides = append(envOverrides, "OPENAI_API_KEY")
 			log.Println("Updated OpenAI API key from environment variable")
 		}
 	}
@@ -54,6 +58,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if openAIBaseURL != "" {
 		adminSettings.OpenAIBaseURL = openAIBaseURL
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "OPENAI_BASE_URL")
 		log.Println("Updated OpenAI base URL from environment variable")
 	}
 
@@ -63,6 +68,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if llmProfileSpeed != "" {
 		adminSettings.LLMProfileSpeed = llmProfileSpeed
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "LLM_PROFILE_SPEED")
 		log.Println("Updated LLM speed profile model from environment variable")
 	}
 
@@ -71,6 +77,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if llmProfileBalanced != "" {
 		adminSettings.LLMProfileBalanced = llmProfileBalanced
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "LLM_PROFILE_BALANCED")
 		log.Println("Updated LLM balanced profile model from environment variable")
 	}
 
@@ -79,6 +86,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if llmProfileQuality != "" {
 		adminSettings.LLMProfileQuality = llmProfileQuality
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "LLM_PROFILE_QUALITY")
 		log.Println("Updated LLM quality profile model from environment variable")
 	}
 
@@ -89,6 +97,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 		enableSignUpsBool := enableSignUps == "true" || enableSignUps == "1"
 		adminSettings.EnableSignUps = enableSignUpsBool
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "ENABLE_SIGNUPS")
 		log.Println("Updated enable signups setting from environment variable")
 	}
 
@@ -97,6 +106,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if webcrawlerURL != "" {
 		adminSettings.WebcrawlerURL = webcrawlerURL
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "WEBCRAWLER_URL")
 		log.Println("Updated Webcrawler URL from environment variable")
 	}
 
@@ -105,6 +115,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if elasticsearchURL != "" {
 		adminSettings.ElasticsearchURL = elasticsearchURL
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "ELASTICSEARCH_URL")
 		log.Println("Updated Elasticsearch URL from environment variable")
 	}
 
@@ -113,6 +124,7 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if elasticsearchUsername != "" {
 		adminSettings.ElasticsearchUsername = elasticsearchUsername
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "ELASTICSEARCH_USERNAME")
 		log.Println("Updated Elasticsearch username from environment variable")
 	}
 
@@ -121,8 +133,12 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 	if elasticsearchPassword != "" {
 		adminSettings.ElasticsearchPassword = elasticsearchPassword
 		settingsUpdated = true
+		envOverrides = append(envOverrides, "ELASTICSEARCH_PASSWORD")
 		log.Println("Updated Elasticsearch password from environment variable")
 	}
+
+	// Set environment overrides
+	adminSettings.EnvOverrides = envOverrides
 
 	// Save settings if they were updated
 	if settingsUpdated {
