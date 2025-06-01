@@ -8,8 +8,6 @@ import (
 func TestAdminSettingsToJSON(t *testing.T) {
 	// Create a sample admin settings
 	adminSettings := &AdminSettings{
-		FirecrawlBaseURL:        "https://api.firecrawl.com",
-		FirecrawlAPIKey_encrypt: "encrypted-firecrawl-key",
 		OpenAIBaseURL:           "https://api.openai.com",
 		OpenAIAPIKey_encrypt:    "encrypted-openai-key",
 		LLMProfileSpeed:         "gpt-3.5-turbo",
@@ -37,14 +35,14 @@ func TestAdminSettingsToJSON(t *testing.T) {
 	}
 
 	// Verify key fields match original
-	if parsedSettings.FirecrawlBaseURL != adminSettings.FirecrawlBaseURL {
-		t.Errorf("Expected FirecrawlBaseURL to be %s, got %s", 
-			adminSettings.FirecrawlBaseURL, parsedSettings.FirecrawlBaseURL)
+	if parsedSettings.OpenAIBaseURL != adminSettings.OpenAIBaseURL {
+		t.Errorf("Expected OpenAIBaseURL to be %s, got %s", 
+			adminSettings.OpenAIBaseURL, parsedSettings.OpenAIBaseURL)
 	}
 
-	if parsedSettings.FirecrawlAPIKey_encrypt != adminSettings.FirecrawlAPIKey_encrypt {
-		t.Errorf("Expected FirecrawlAPIKey_encrypt to be %s, got %s", 
-			adminSettings.FirecrawlAPIKey_encrypt, parsedSettings.FirecrawlAPIKey_encrypt)
+	if parsedSettings.OpenAIAPIKey_encrypt != adminSettings.OpenAIAPIKey_encrypt {
+		t.Errorf("Expected OpenAIAPIKey_encrypt to be %s, got %s", 
+			adminSettings.OpenAIAPIKey_encrypt, parsedSettings.OpenAIAPIKey_encrypt)
 	}
 
 	if parsedSettings.EnableSignUps != adminSettings.EnableSignUps {
@@ -56,8 +54,6 @@ func TestAdminSettingsToJSON(t *testing.T) {
 func TestAdminSettingsFromJSON(t *testing.T) {
 	// Create a JSON string
 	jsonStr := `{
-		"firecrawl_base_url": "https://api.firecrawl.com",
-		"firecrawl_api_key_encrypt": "encrypted-firecrawl-key",
 		"openai_base_url": "https://api.openai.com",
 		"openai_api_key_encrypt": "encrypted-openai-key",
 		"llm_profile_speed": "gpt-3.5-turbo",
@@ -73,14 +69,14 @@ func TestAdminSettingsFromJSON(t *testing.T) {
 	}
 
 	// Verify the parsed values
-	if settings.FirecrawlBaseURL != "https://api.firecrawl.com" {
-		t.Errorf("Expected FirecrawlBaseURL to be %s, got %s", 
-			"https://api.firecrawl.com", settings.FirecrawlBaseURL)
+	if settings.OpenAIBaseURL != "https://api.openai.com" {
+		t.Errorf("Expected OpenAIBaseURL to be %s, got %s", 
+			"https://api.openai.com", settings.OpenAIBaseURL)
 	}
 
-	if settings.FirecrawlAPIKey_encrypt != "encrypted-firecrawl-key" {
-		t.Errorf("Expected FirecrawlAPIKey_encrypt to be %s, got %s", 
-			"encrypted-firecrawl-key", settings.FirecrawlAPIKey_encrypt)
+	if settings.OpenAIAPIKey_encrypt != "encrypted-openai-key" {
+		t.Errorf("Expected OpenAIAPIKey_encrypt to be %s, got %s", 
+			"encrypted-openai-key", settings.OpenAIAPIKey_encrypt)
 	}
 
 	if !settings.EnableSignUps {

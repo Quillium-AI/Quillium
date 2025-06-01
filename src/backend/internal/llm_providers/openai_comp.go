@@ -15,7 +15,7 @@ import (
 
 // Chat function implements streaming for OpenAI responses
 // The callback function is called for each chunk of the response
-func Chat(model string, api_key string, base_url string, query string, firecrawl_results []string, sources []chats.Source, callback func(StreamResponse)) (ChatResponse, error) {
+func Chat(model string, api_key string, base_url string, query string, index_results []string, sources []chats.Source, callback func(StreamResponse)) (ChatResponse, error) {
 	log.Printf("Preparing OpenAI streaming request parameters")
 
 	// Create system message content
@@ -33,9 +33,9 @@ func Chat(model string, api_key string, base_url string, query string, firecrawl
 
 							Always behave like a helpful, knowledgeable, and trustworthy research assistant who thoroughly cites multiple sources.`
 
-	// Create user message content with query and Firecrawl results
-	userMessageContent := fmt.Sprintf("Here is the Users Query: %s\n\nHere are the Firecrawl results related to the query: %s",
-		query, strings.Join(firecrawl_results, "\n"))
+	// Create user message content with query and index results
+	userMessageContent := fmt.Sprintf("Here is the Users Query: %s\n\nHere are the index results related to the query: %s",
+		query, strings.Join(index_results, "\n"))
 
 	// Create the request payload
 	payload := map[string]interface{}{

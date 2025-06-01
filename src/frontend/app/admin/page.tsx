@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from '../components/AuthProvider';
 import { FiUsers, FiSettings, FiHome, FiShield, FiAlertCircle, FiServer, FiDatabase, FiSliders, FiActivity, FiSearch } from 'react-icons/fi';
 import WebcrawlerDashboard from '../components/WebcrawlerDashboard';
 import IndexerDashboard from '../components/IndexerDashboard';
+import SystemSettings from '../components/SystemSettings';
 
 // Main admin settings page component
 export default function AdminSettingsPage() {
@@ -36,7 +37,6 @@ function AdminSettingsContent() {
   const sidebarItems = [
     { id: 'users', label: 'User Management', icon: <FiUsers /> },
     { id: 'system', label: 'System Settings', icon: <FiServer /> },
-    { id: 'logs', label: 'Activity Logs', icon: <FiActivity /> },
     { id: 'webcrawler', label: 'Webcrawler', icon: <FiDatabase /> },
     { id: 'indexer', label: 'Elasticsearch Indexer', icon: <FiSearch /> }
   ];
@@ -245,81 +245,8 @@ function AdminSettingsContent() {
                   </div>
                   System Settings
                 </h1>
-
-                <div className="bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-gray-700/50 relative">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--primary)] to-transparent"></div>
-                  <div className="p-8">
-                    <h2 className="text-xl font-semibold mb-8 flex items-center">
-                      <span className="text-[var(--primary)] mr-3"><FiSliders /></span>
-                      System Configuration
-                    </h2>
-
-                    <div className="space-y-6">
-                      <div className="bg-gray-700/40 rounded-xl border border-gray-600/30 overflow-hidden">
-                        <div className="p-6">
-                          <p className="text-gray-300 mb-4">Configure system-wide settings, API limits, and application behavior.</p>
-                          <button
-                            className="px-5 py-2.5 bg-[var(--primary)]/80 text-white rounded-xl hover:bg-[var(--primary)] active:scale-95 transition-all duration-200 flex items-center shadow-lg shadow-[var(--primary)]/20 group/btn"
-                            onClick={() => displayMessage('System configuration feature will be implemented soon.', 'info')}
-                          >
-                            <span className="group-hover/btn:translate-x-1 transition-transform duration-200">Configure System</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="bg-gray-700/40 rounded-xl border border-gray-600/30 overflow-hidden">
-                        <div className="p-6">
-                          <h3 className="font-medium mb-2 flex items-center">
-                            <FiDatabase className="mr-2 text-[var(--secondary)]" />
-                            Database Management
-                          </h3>
-                          <p className="text-gray-300 mb-4">Manage database settings, backups, and maintenance operations.</p>
-                          <button
-                            className="px-5 py-2.5 bg-[var(--secondary)]/80 text-white rounded-xl hover:bg-[var(--secondary)] active:scale-95 transition-all duration-200 flex items-center shadow-lg shadow-[var(--secondary)]/20 group/btn"
-                            onClick={() => displayMessage('Database management feature will be implemented soon.', 'info')}
-                          >
-                            <span className="group-hover/btn:translate-x-1 transition-transform duration-200">Database Settings</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'logs' && (
-              <div className="relative">
-                <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent flex items-center">
-                  <div className="mr-4 p-2 bg-gradient-to-r from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-lg">
-                    <FiActivity className="text-[var(--primary)]" size={24} />
-                  </div>
-                  Activity Logs
-                </h1>
-
-                <div className="bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-gray-700/50 relative">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--primary)] to-transparent"></div>
-                  <div className="p-8">
-                    <h2 className="text-xl font-semibold mb-8 flex items-center">
-                      <span className="text-[var(--primary)] mr-3"><FiActivity /></span>
-                      System Logs
-                    </h2>
-
-                    <div className="space-y-6">
-                      <div className="bg-gray-700/40 rounded-xl border border-gray-600/30 overflow-hidden">
-                        <div className="p-6">
-                          <p className="text-gray-300 mb-4">View system logs, user activity, and error reports.</p>
-                          <button
-                            className="px-5 py-2.5 bg-[var(--primary)]/80 text-white rounded-xl hover:bg-[var(--primary)] active:scale-95 transition-all duration-200 flex items-center shadow-lg shadow-[var(--primary)]/20 group/btn"
-                            onClick={() => displayMessage('Activity logs feature will be implemented soon.', 'info')}
-                          >
-                            <span className="group-hover/btn:translate-x-1 transition-transform duration-200">View Logs</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                
+                <SystemSettings />
               </div>
             )}
 

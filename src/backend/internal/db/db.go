@@ -322,20 +322,6 @@ func (d *DB) GetUserSettings(userId int) (*settings.UserSettings, error) {
 	return &config, nil
 }
 
-func (d *DB) UpdateAdminSettings(config *settings.AdminSettings) error {
-	query := `
-		UPDATE admin_settings
-		SET config = $1
-		WHERE version = (SELECT MAX(version) FROM admin_settings)
-	`
-	_, err := d.Conn.Exec(context.Background(), query, config)
-	if err != nil {
-		return errors.New("failed to update admin settings: " + err.Error())
-	}
-	log.Printf("Updated admin settings")
-	return nil
-}
-
 func (d *DB) GetAdminSettings() (*settings.AdminSettings, error) {
 	query := `
 		SELECT config FROM admin_settings

@@ -401,8 +401,6 @@ func TestAdminSettings(t *testing.T) {
 
 	// Create test admin settings
 	testSettings := &settings.AdminSettings{
-		FirecrawlBaseURL:        "https://api.firecrawl.dev",
-		FirecrawlAPIKey_encrypt: "encrypted_key_1",
 		OpenAIBaseURL:           "https://api.openai.com",
 		OpenAIAPIKey_encrypt:    "encrypted_key_2",
 		LLMProfileSpeed:         "gpt-3.5-turbo",
@@ -424,11 +422,6 @@ func TestAdminSettings(t *testing.T) {
 	}
 
 	// Verify the settings were created correctly
-	if createdSettings.FirecrawlBaseURL != testSettings.FirecrawlBaseURL {
-		t.Errorf("Expected FirecrawlBaseURL %v, got %v",
-			testSettings.FirecrawlBaseURL, createdSettings.FirecrawlBaseURL)
-	}
-
 	if createdSettings.OpenAIBaseURL != testSettings.OpenAIBaseURL {
 		t.Errorf("Expected OpenAIBaseURL %v, got %v",
 			testSettings.OpenAIBaseURL, createdSettings.OpenAIBaseURL)
@@ -448,7 +441,7 @@ func TestAdminSettings(t *testing.T) {
 	testSettings.EnableSignUps = false
 	testSettings.LLMProfileQuality = "gpt-4-32k"
 
-	err = db.UpdateAdminSettings(testSettings)
+	err = db.CreateAdminSettings(testSettings)
 	if err != nil {
 		t.Fatalf("Failed to update admin settings: %v", err)
 	}

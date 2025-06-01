@@ -5,8 +5,6 @@ type UserSettings struct {
 }
 
 type AdminSettings struct {
-	FirecrawlBaseURL        string `json:"firecrawl_base_url"`
-	FirecrawlAPIKey_encrypt string `json:"firecrawl_api_key_encrypt"`
 	OpenAIBaseURL           string `json:"openai_base_url"`
 	OpenAIAPIKey_encrypt    string `json:"openai_api_key_encrypt"`
 	LLMProfileSpeed         string `json:"llm_profile_speed"`

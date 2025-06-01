@@ -247,6 +247,19 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if signups are enabled in admin settings
+	adminSettings, err := dbConn.GetAdminSettings()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to retrieve admin settings"})
+		return
+	}
+	if !adminSettings.EnableSignUps {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "User registration is currently disabled by the administrator"})
+		return
+	}
+
 	var req SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)

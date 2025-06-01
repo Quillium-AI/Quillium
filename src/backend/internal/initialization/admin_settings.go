@@ -23,7 +23,6 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 
 		// Create default settings
 		adminSettings = &settings.AdminSettings{
-			FirecrawlBaseURL:      "https://api.firecrawl.dev",
 			OpenAIBaseURL:         "https://api.openai.com",
 			LLMProfileSpeed:       "gpt-3.5-turbo",
 			LLMProfileBalanced:    "gpt-4o",
@@ -37,20 +36,6 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 		settingsUpdated = true
 	}
 
-	// Check for environment variables and update settings if they exist
-	// Firecrawl API Key
-	firecrawlAPIKey := os.Getenv("FIRECRAWL_API_KEY")
-	if firecrawlAPIKey != "" {
-		encryptedKey, err := security.EncryptPassword(firecrawlAPIKey)
-		if err != nil {
-			log.Printf("Warning: Failed to encrypt Firecrawl API key: %v", err)
-		} else if encryptedKey != nil {
-			adminSettings.FirecrawlAPIKey_encrypt = *encryptedKey // Dereference the pointer
-			settingsUpdated = true
-			log.Println("Updated Firecrawl API key from environment variable")
-		}
-	}
-
 	// OpenAI API Key
 	openAIAPIKey := os.Getenv("OPENAI_API_KEY")
 	if openAIAPIKey != "" {
@@ -62,14 +47,6 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 			settingsUpdated = true
 			log.Println("Updated OpenAI API key from environment variable")
 		}
-	}
-
-	// Firecrawl Base URL
-	firecrawlBaseURL := os.Getenv("FIRECRAWL_BASE_URL")
-	if firecrawlBaseURL != "" {
-		adminSettings.FirecrawlBaseURL = firecrawlBaseURL
-		settingsUpdated = true
-		log.Println("Updated Firecrawl base URL from environment variable")
 	}
 
 	// OpenAI Base URL

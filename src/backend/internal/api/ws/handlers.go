@@ -9,7 +9,6 @@ import (
 
 	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/firecrawl"
 	llmproviders "github.com/Quillium-AI/Quillium/src/backend/internal/llm_providers"
 	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
 )
@@ -117,29 +116,17 @@ func processChatRequest(client *Client, req ChatRequest) {
 	// Update the user message with the message number
 	userMessage.MsgNum = msgNum
 
-	// Prepare chat history for the AI (excluding Firecrawl data)
+	// Prepare chat history for the AI
 	var chatHistory []chats.Message
 	for i := 0; i < len(req.Messages)-1; i++ {
 		chatHistory = append(chatHistory, req.Messages[i])
 	}
 
-	// Search Firecrawl for relevant information
+	// Search index for relevant information
 	// Initialize sources as an empty array to ensure it's never null
 	sources := []chats.Source{}
 
 	// Decrypt API keys if needed
-	firecrawlAPIKey, err := security.DecryptPassword(adminSettings.FirecrawlAPIKey_encrypt)
-	if err != nil {
-		log.Printf("Error decrypting Firecrawl API key: %v", err)
-		sendErrorResponse(client, "Internal server error: Firecrawl API key configuration issue")
-		return
-	}
-	if firecrawlAPIKey == nil {
-		log.Printf("Error: Decrypted Firecrawl API key is nil")
-		sendErrorResponse(client, "Internal server error: Firecrawl API key is nil")
-		return
-	}
-
 	openAIAPIKey, err := security.DecryptPassword(adminSettings.OpenAIAPIKey_encrypt)
 	if err != nil {
 		log.Printf("Error decrypting OpenAI API key: %v", err)
@@ -159,42 +146,16 @@ func processChatRequest(client *Client, req ChatRequest) {
 	}
 
 	// Set search parameters based on quality profile
-	var enableMarkdown bool
-	var resultLimit int
-	var DisableWikipedia bool
 	switch qualityProfile {
 	case "speed":
-		enableMarkdown = false
-		resultLimit = 5
-		DisableWikipedia = false
+		//TODO: implement speed profile
 	case "quality":
-		enableMarkdown = true
-		resultLimit = 10
-		DisableWikipedia = true
+		//TODO: implement quality profile
 	default: // balanced
-		enableMarkdown = false
-		resultLimit = 10
-		DisableWikipedia = false
+		//TODO: implement balanced profile
 	}
 
-	firecrawlResp, err := firecrawl.SearchFirecrawl(
-		*firecrawlAPIKey,
-		adminSettings.FirecrawlBaseURL,
-		userMessage.Content,
-		DisableWikipedia,
-		enableMarkdown,
-		resultLimit,
-	)
-
-	if err != nil {
-		log.Printf("Error searching Firecrawl: %v", err)
-		// Continue without Firecrawl results
-	} else {
-		log.Printf("Firecrawl search successful, results count=%d", len(firecrawlResp.Data))
-		// Parse the Firecrawl results
-		parsedSources, _ := firecrawl.ParseSearchResults(firecrawlResp, msgNum)
-		sources = parsedSources
-	}
+	//TODO: implement search with elastic
 
 	// Select the appropriate model based on the quality profile
 	var model string
@@ -260,7 +221,7 @@ func processChatRequest(client *Client, req ChatRequest) {
 			*openAIAPIKey,
 			adminSettings.OpenAIBaseURL,
 			userMessage.Content,
-			nil, // Pass nil instead of formatted firecrawl results
+			nil, //TODO: implement index results
 			sources, // Pass sources struct
 			streamCallback,
 		)
