@@ -155,7 +155,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               <div className="flex flex-col items-center space-y-3 relative z-10">
                 <div
                   className="w-12 h-12 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] p-[2px] shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/40 transition-shadow duration-300 cursor-pointer"
-                  onClick={() => router.push('/profile')}
+                  onClick={() => router.push('/settings')}
                 >
                   <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center text-white font-bold">
                     {userInfo?.username ? userInfo.username.charAt(0).toUpperCase() : 'U'}
@@ -173,7 +173,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               <div className="flex items-center relative z-10">
                 <div
                   className="w-12 h-12 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] p-[2px] shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/40 transition-shadow duration-300 cursor-pointer group"
-                  onClick={() => router.push('/profile')}
+                  onClick={() => router.push('/settings')}
                 >
                   <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center text-white font-bold group-hover:scale-95 transition-transform duration-200">
                     {userInfo?.username ? userInfo.username.charAt(0).toUpperCase() : 'U'}
