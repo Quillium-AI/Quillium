@@ -1,43 +1,84 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "platform": "gitlab",
-  "schedule": ["before 3am on the first day of the month"],
+  "schedule": [
+    "before 3am on the first day of the month"
+  ],
   "packageRules": [
     {
-      "matchPackagePatterns": ["*"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch"
+      "groupSlug": "all-minor-patch",
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
-      "matchFileNames": ["src/frontend/**"],
-      "matchPackagePatterns": ["*"],
+      "matchFileNames": [
+        "src/frontend/**"
+      ],
       "groupName": "frontend dependencies",
-      "labels": ["frontend", "dependencies"]
+      "labels": [
+        "frontend",
+        "dependencies"
+      ],
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
-      "matchFileNames": ["src/backend/**"],
-      "matchDepTypes": ["require"],
-      "matchPackagePatterns": ["*"],
+      "matchFileNames": [
+        "src/backend/**"
+      ],
+      "matchDepTypes": [
+        "require"
+      ],
       "groupName": "backend dependencies",
-      "labels": ["backend", "dependencies"]
+      "labels": [
+        "backend",
+        "dependencies"
+      ],
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
-      "matchPackageNames": ["go"],
-      "matchUpdateTypes": ["major", "minor", "patch"],
+      "matchPackageNames": [
+        "go"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ],
       "groupName": "Go",
-      "labels": ["go"]
+      "labels": [
+        "go"
+      ]
     }
   ],
-  "ignorePaths": ["**/node_modules/**"],
-  "enabledManagers": ["gomod", "npm"],
+  "ignorePaths": [
+    "**/node_modules/**"
+  ],
+  "enabledManagers": [
+    "gomod",
+    "npm"
+  ],
   "npm": {
-    "fileMatch": ["package.json", "pnpm-lock.yaml"]
+    "managerFilePatterns": [
+      "/package.json/",
+      "/pnpm-lock.yaml/"
+    ]
   },
   "gomod": {
-    "fileMatch": ["go.mod"]
+    "managerFilePatterns": [
+      "/go.mod/"
+    ]
   }
 }
