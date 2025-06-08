@@ -1,5 +1,15 @@
 # Contributing to Quillium
 
+## IMPORTANT: GitLab is our primary repository
+
+**PLEASE NOTE:** This GitHub repository is a mirror. All contributions should be made through our GitLab repository:
+- Repository URL: https://gitlab.cherkaoui.ch/quillium-ai/quillium
+- Issue Board: https://gitlab.cherkaoui.ch/quillium-ai/quillium/-/issues
+
+**Any pull requests or issues opened on GitHub will be ignored and closed after a warning.**
+
+Please fork and create merge requests on GitLab instead.
+
 Thank you for your interest in contributing to Quillium! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
@@ -31,27 +41,27 @@ When contributing new features or making significant changes, please update the 
 
 ### Reporting Bugs
 
-Bugs are tracked as GitHub issues. Search the [issues](https://github.com/Quillium-AI/Quillium/issues) to see if your bug has already been reported. If not, create a new issue with a clear description and as much relevant information as possible.
+Bugs are tracked as GitLab issues. Search the [issues](https://gitlab.cherkaoui.ch/quillium-ai/quillium/-/issues) to see if your bug has already been reported. If not, create a new issue with a clear description and as much relevant information as possible.
 
 ### Suggesting Enhancements
 
-Enhancement suggestions are also tracked as GitHub issues. Please provide clear descriptions of the enhancement and how it would benefit the project.
+Enhancement suggestions are also tracked as GitLab issues. Please provide clear descriptions of the enhancement and how it would benefit the project.
 
-### Pull Requests
+### Merge Requests
 
-1. Fork the repository
+1. Fork the GitLab repository at https://gitlab.cherkaoui.ch/quillium-ai/quillium
 2. Create a new branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
 4. Commit your changes using the conventional commit format (`git commit -m 'feat(component): add some amazing feature'`)
 5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+6. Open a Merge Request on GitLab
 
 ### Development Workflow
 
 1. Set up your development environment
    ```bash
    # Clone the repository
-   git clone https://github.com/Quillium-AI/Quillium.git
+   git clone https://gitlab.cherkaoui.ch/quillium-ai/quillium.git
    cd Quillium
    
    # Install backend dependencies
@@ -177,4 +187,4 @@ For example:
 
 ## License
 
-By contributing to Quillium, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
+By contributing to Quillium, you agree that your contributions will be licensed under the project's [GNU General Public License v3.0](LICENSE).

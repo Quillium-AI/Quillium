@@ -2,6 +2,10 @@
 
 Quillium is an open-source AI engine designed to be a self-hosted alternative to Perplexity. It allows you to deploy your own AI-powered search and chat interface while specifying your preferred AI endpoint.
 
+# Table of Contents
+
+[[_TOC_]]
+
 ## Features
 
 - Self-hosted AI-powered search and chat interface
@@ -156,7 +160,7 @@ Before contributing, please sign our Contributor License Agreement (CLA) which w
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Security
 
