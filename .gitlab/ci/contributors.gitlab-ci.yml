@@ -33,6 +33,8 @@ update-contributors:
           --data '{
             "source_branch": "update-contributors",
             "target_branch": "main",
+            "merge_when_pipeline_succeeds": true,
+            "should_remove_source_branch": true,
             "title": "📌 Update contributors",
             "description": "Automatically added missing contributors"
           }' \
