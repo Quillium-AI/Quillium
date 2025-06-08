@@ -2,9 +2,12 @@ renovate:
   stage: test
   image: renovate/renovate:latest
   variables:
-    RENOVATE_TOKEN: $RENOVATE_TOKEN
+    RENOVATE_TOKEN: $CI_JOB_TOKEN
+    RENOVATE_PLATFORM: "gitlab"
+    RENOVATE_ENDPOINT: $CI_API_V4_URL
     RENOVATE_REPOSITORIES: $CI_PROJECT_PATH
     RENOVATE_CONFIG_FILE: renovate.json
+    LOG_LEVEL: "info"
   script:
     - renovate
   rules:

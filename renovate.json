@@ -3,6 +3,7 @@
   "extends": [
     "config:base"
   ],
+  "platform": "gitlab",
   "schedule": ["before 3am on the first day of the month"],
   "packageRules": [
     {
@@ -12,14 +13,13 @@
       "groupSlug": "all-minor-patch"
     },
     {
-      "matchPaths": ["src/frontend/**"],
+      "matchFileNames": ["src/frontend/**"],
       "matchPackagePatterns": ["*"],
-      "packageManager": "pnpm",
       "groupName": "frontend dependencies",
       "labels": ["frontend", "dependencies"]
     },
     {
-      "matchPaths": ["src/backend/**"],
+      "matchFileNames": ["src/backend/**"],
       "matchDepTypes": ["require"],
       "matchPackagePatterns": ["*"],
       "groupName": "backend dependencies",
@@ -35,13 +35,7 @@
   "ignorePaths": ["**/node_modules/**"],
   "enabledManagers": ["gomod", "npm"],
   "npm": {
-    "fileMatch": ["package.json", "pnpm-lock.yaml"],
-    "packageRules": [
-      {
-        "matchPackagePatterns": ["*"],
-        "rangeStrategy": "replace"
-      }
-    ]
+    "fileMatch": ["package.json", "pnpm-lock.yaml"]
   },
   "gomod": {
     "fileMatch": ["go.mod"]
