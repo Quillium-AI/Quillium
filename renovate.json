@@ -1,0 +1,49 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "schedule": ["before 3am on the first day of the month"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchPaths": ["src/frontend/**"],
+      "matchPackagePatterns": ["*"],
+      "packageManager": "pnpm",
+      "groupName": "frontend dependencies",
+      "labels": ["frontend", "dependencies"]
+    },
+    {
+      "matchPaths": ["src/backend/**"],
+      "matchDepTypes": ["require"],
+      "matchPackagePatterns": ["*"],
+      "groupName": "backend dependencies",
+      "labels": ["backend", "dependencies"]
+    },
+    {
+      "matchPackageNames": ["go"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "groupName": "Go",
+      "labels": ["go"]
+    }
+  ],
+  "ignorePaths": ["**/node_modules/**"],
+  "enabledManagers": ["gomod", "npm"],
+  "npm": {
+    "fileMatch": ["package.json", "pnpm-lock.yaml"],
+    "packageRules": [
+      {
+        "matchPackagePatterns": ["*"],
+        "rangeStrategy": "replace"
+      }
+    ]
+  },
+  "gomod": {
+    "fileMatch": ["go.mod"]
+  }
+}

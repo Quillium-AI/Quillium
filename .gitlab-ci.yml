@@ -1,0 +1,39 @@
+stages:
+  - test
+  - build
+  - deploy
+
+include:
+  - local: '.gitlab/ci/renovate.gitlab-ci.yml'
+  - local: '.gitlab/ci/contributors.gitlab-ci.yml'
+
+# Backend testing job
+#backend-test:
+#  stage: test
+#  image: golang:1.24
+#  script:
+#    - cd src/backend
+#    - go mod download
+#    - go test -v ./...
+
+# Frontend testing job
+#frontend-test:
+#  stage: test
+#  image: node:20
+#  script:
+#    - cd src/frontend
+#    - pnpm install
+#    - pnpm test
+
+# Build job
+#build:
+#  stage: build
+#  image: docker:latest
+#  services:
+#    - docker:dind
+#  script:
+#    - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN
+#    - docker build -t quilliumai/quillium:latest .
+#    - docker push quilliumai/quillium:latest
+#  only:
+#    - main

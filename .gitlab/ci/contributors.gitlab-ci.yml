@@ -1,0 +1,47 @@
+update-contributors:
+  stage: deploy
+  image: node:20
+  variables:
+    GIT_AUTHOR_NAME: "Hadi Cherkaoui"
+    GIT_AUTHOR_EMAIL: "github@hide.cherkaoui.ch"
+    GIT_COMMITTER_NAME: "Hadi Cherkaoui"
+    GIT_COMMITTER_EMAIL: "github@hide.cherkaoui.ch"
+  script:
+    - npm install -g all-contributors-cli
+    # Capture missing contributors
+    - MISSING=$(npx all-contributors check | awk '/Missing contributors/{flag=1; next} /^$/{flag=0} flag')
+    # Add each missing contributor with default 'code' contribution
+    - |
+      for username in $MISSING; do
+        username=$(echo "$username" | tr -d ',')  # Clean commas
+        echo "Adding contributor: $username"
+        npx all-contributors add "$username" code
+      done
+    # Generate final output
+    - npx all-contributors generate
+    # Create MR if there are changes
+    - |
+      if [[ -n $(git status -s) ]]; then
+        git checkout -b update-contributors
+        git add .
+        git commit -m "docs: Update contributors list"
+        git push -f origin update-contributors
+        echo "Creating merge request..."
+        curl --request POST \
+          --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+          --header "Content-Type: application/json" \
+          --data '{
+            "source_branch": "update-contributors",
+            "target_branch": "main",
+            "title": "📌 Update contributors",
+            "description": "Automatically added missing contributors"
+          }' \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests"
+      else
+        echo "No changes to commit"
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual

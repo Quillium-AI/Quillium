@@ -1,0 +1,14 @@
+renovate:
+  stage: test
+  image: renovate/renovate:latest
+  variables:
+    RENOVATE_TOKEN: $RENOVATE_TOKEN
+    RENOVATE_REPOSITORIES: $CI_PROJECT_PATH
+    RENOVATE_CONFIG_FILE: renovate.json
+  script:
+    - renovate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
