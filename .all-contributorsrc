@@ -14,32 +14,5 @@
   "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors-<%= contributors.length %>-orange.svg?style=flat-square)](#contributors)",
   "contributorTemplate": "<a href=\"https://gitlab.cherkaoui.ch/<%= contributor.login %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"100px;\" alt=\"<%= contributor.name %>\"/><br /><sub><b><%= contributor.name %></b></sub></a>",
   "contributors": [
-    {
-      "login": "HadiCherkaoui",
-      "name": "Hadi Cherkaoui",
-      "avatar_url": "https://gitlab.cherkaoui.ch/uploads/-/system/user/avatar/1/avatar.png",
-      "profile": "https://gitlab.cherkaoui.ch/HadiCherkaoui",
-      "contributions": [
-        "code"
-      ]
-    },
-    {
-      "login": "Devaughn-glitch",
-      "name": "Devaughn Lawrence",
-      "avatar_url": "https://gitlab.cherkaoui.ch/uploads/-/system/user/avatar/2/avatar.png",
-      "profile": "https://gitlab.cherkaoui.ch/Devaughn-glitch",
-      "contributions": [
-        "code"
-      ]
-    },
-    {
-      "login": "devinvoegele",
-      "name": "DevinVoegele",
-      "avatar_url": "https://gitlab.cherkaoui.ch/uploads/-/system/user/avatar/3/avatar.png",
-      "profile": "https://gitlab.cherkaoui.ch/devinvoegele",
-      "contributions": [
-        "code"
-      ]
-    }
   ]
 }
