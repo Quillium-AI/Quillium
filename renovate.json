@@ -68,9 +68,9 @@
   ],
   "enabledManagers": [
     "gomod",
-    "pnpm"
+    "npm"
   ],
-  "pnpm": {
+  "npm": {
     "managerFilePatterns": [
       "pnpm-lock.yaml"
     ]
