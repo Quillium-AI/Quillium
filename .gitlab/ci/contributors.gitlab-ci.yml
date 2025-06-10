@@ -10,7 +10,7 @@ update-contributors:
     - npm install -g all-contributors-cli
     # Capture missing contributors
     - MISSING=$(npx all-contributors check | awk '/Missing contributors/{flag=1; next} /^$/{flag=0} flag')
-    # Add each missing contributor with default 'code' contribution, skipping bots and deleted users
+    # Add each missing contributor with default 'code' contribution, skipping bots and deleted users, and only if user exists in GitLab
     - |
       for username in $MISSING; do
         username=$(echo "$username" | tr -d ',')  # Clean commas
@@ -20,8 +20,14 @@ update-contributors:
             continue
             ;;
         esac
-        echo "Adding contributor: $username"
-        npx all-contributors add "$username" code
+        # Check if user exists on GitLab using CI_JOB_TOKEN
+        if curl --silent --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+            "$CI_API_V4_URL/users?username=$username" | grep -q "\"username\":\"$username\""; then
+          echo "Adding contributor: $username"
+          npx all-contributors add "$username" code
+        else
+          echo "User $username does not exist on GitLab, skipping."
+        fi
       done
     # Generate final output
     - npx all-contributors generate
@@ -34,7 +40,7 @@ update-contributors:
         git push -f origin update-contributors
         echo "Creating merge request..."
         curl --request POST \
-          --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+          --header "JOB-TOKEN: $CI_JOB_TOKEN" \
           --header "Content-Type: application/json" \
           --data '{
             "source_branch": "update-contributors",
