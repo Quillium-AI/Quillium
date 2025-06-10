@@ -1,6 +1,6 @@
 renovate:
   stage: test
-  image: renovate/renovate:40.49-full
+  image: renovate/renovate:latest
   variables:
     RENOVATE_TOKEN: $GITLAB_API_TOKEN
     RENOVATE_PLATFORM: "gitlab"
