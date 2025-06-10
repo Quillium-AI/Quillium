@@ -1,6 +1,6 @@
 {
-  "projectName": "Quillium",
-  "projectOwner": "Quillium-AI",
+  "projectName": "quillium",
+  "projectOwner": "quillium-ai",
   "repoType": "gitlab",
   "repoHost": "https://gitlab.cherkaoui.ch",
   "files": [
