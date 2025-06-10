@@ -68,17 +68,16 @@
   ],
   "enabledManagers": [
     "gomod",
-    "npm"
+    "pnpm"
   ],
-  "npm": {
+  "pnpm": {
     "managerFilePatterns": [
-      "/package.json/",
-      "/pnpm-lock.yaml/"
+      "pnpm-lock.yaml"
     ]
   },
   "gomod": {
     "managerFilePatterns": [
-      "/go.mod/"
+      "go.mod"
     ]
   }
 }
