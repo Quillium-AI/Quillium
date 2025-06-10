@@ -5,7 +5,6 @@ stages:
 
 include:
   - local: '.gitlab/ci/renovate.gitlab-ci.yml'
-  - local: '.gitlab/ci/contributors.gitlab-ci.yml'
 
 # Backend testing job
 #backend-test:
