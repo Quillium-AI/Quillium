@@ -8,12 +8,15 @@ update-contributors:
     GIT_COMMITTER_EMAIL: "github@hide.cherkaoui.ch"
   script:
     - npm install -g all-contributors-cli
-    # Capture missing contributors
-    - MISSING=$(npx all-contributors check | awk '/Missing contributors/{flag=1; next} /^$/{flag=0} flag')
-    # Add each missing contributor with default 'code' contribution, skipping bots and deleted users, and only if user exists in GitLab
+
+    # Extract the line with missing contributors
+    - MISSING_LINE=$(npx all-contributors check | awk '/Missing contributors/{getline; print}')
+    # Split on commas and process each username robustly
     - |
-      for username in $MISSING; do
-        username=$(echo "$username" | tr -d ',')  # Clean commas
+      IFS=',' read -ra USERS <<< "$MISSING_LINE"
+      for username in "${USERS[@]}"; do
+        username=$(echo "$username" | xargs)  # Trim whitespace
+        [ -z "$username" ] && continue
         case "$username" in
           dependabot[bot]|github-actions[bot]|Devin-create)
             echo "Skipping excluded user: $username"
@@ -29,8 +32,10 @@ update-contributors:
           echo "User $username does not exist on GitLab, skipping."
         fi
       done
+
     # Generate final output
     - npx all-contributors generate
+
     # Create MR if there are changes
     - |
       if [[ -n $(git status -s) ]]; then
