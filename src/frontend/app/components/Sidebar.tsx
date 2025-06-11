@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
-import { FiSettings, FiX, FiHome, FiMessageSquare, FiMenu, FiChevronLeft, FiZap, FiStar, FiShield } from 'react-icons/fi';
+import { FiSettings, FiX, FiHome, FiMessageSquare, FiMenu, FiChevronLeft, FiZap, FiShield } from 'react-icons/fi';
 
 interface SidebarProps {
   isOpen: boolean;

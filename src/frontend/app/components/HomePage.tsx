@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import SearchBox from './SearchBox';
-import { FiZap, FiMessageSquare, FiArrowRight } from 'react-icons/fi';
+import { FiZap, FiMessageSquare } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const router = useRouter();
   
   // Handle responsive sidebar behavior
   useEffect(() => {
@@ -25,11 +27,8 @@ export default function HomePage() {
     setIsSidebarOpen(!isSidebarOpen);
   };
   
-  const handleSearch = (query: string, profileId: string) => {
-    // This would be implemented later to handle actual search functionality
-    console.log(`Searching for: ${query} with profile: ${profileId}`);
-    // For now, we could redirect to a chat page or similar
-    // router.push(`/chat?query=${encodeURIComponent(query)}&profile=${profileId}`);
+  const handleSearch = (query: string) => {
+    router.push(`/chat?query=${query}`)
   };
   
   return (

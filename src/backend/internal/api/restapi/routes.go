@@ -45,6 +45,8 @@ func SetupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/user/chats", withMiddleware(handlers.GetChats, middleware.AuthTypeFrontend))
 	mux.HandleFunc("/api/user/chat/delete", withMiddleware(handlers.DeleteChat, middleware.AuthTypeFrontend))
 	mux.HandleFunc("/api/user/chat/create", withMiddleware(handlers.CreateChat, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/chat/send", withMiddleware(handlers.SendChatMessage, middleware.AuthTypeFrontend))
+	mux.HandleFunc("/api/chat/stream", withMiddleware(handlers.StreamChatResponse, middleware.AuthTypeFrontend))
 
 	// Admin endpoints (JWT auth required + admin role)
 	mux.HandleFunc("/api/admin/users", withMiddleware(handlers.ListUsers, middleware.AuthTypeFrontend))

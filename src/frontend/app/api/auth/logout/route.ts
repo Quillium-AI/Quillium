@@ -19,19 +19,19 @@ export async function POST(request: NextRequest) {
     let responseData = {};
     try {
       responseData = await response.json();
-    } catch (e) {
-      // If response is not JSON, use empty object
+    } catch {
+      responseData = {};
     }
-    
+
     const res = NextResponse.json(responseData, { status: response.status });
-    
+
     // Forward any cookies from the backend response (including cookie clearing)
     response.headers.forEach((value, key) => {
       if (key.toLowerCase() === 'set-cookie') {
         res.headers.append('Set-Cookie', value);
       }
     });
-    
+
     return res;
   } catch (error) {
     console.error('Logout error:', error);

@@ -39,8 +39,8 @@ async function handleUpdateRequest(request: NextRequest) {
     let responseData = {};
     try {
       responseData = await response.json();
-    } catch (e) {
-      // If response is not JSON, use empty object
+    } catch {
+      responseData = {};
     }
     
     return NextResponse.json(responseData, { status: response.status });

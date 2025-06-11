@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 // Define message types for better type safety
 interface WebSocketMessage {
   type: string;
-  payload: any;
+  payload: unknown;
 }
 
 type WebSocketContextType = {

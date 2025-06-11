@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "./components/AuthProvider";
-import { WebSocketProvider } from "./components/WebSocketProvider";
+import { ChatAPIProvider } from "./components/ChatAPIProvider";
 import HomePage from "./components/HomePage";
 import { FiAlertCircle } from 'react-icons/fi';
 import './globals.css';
@@ -93,8 +93,8 @@ function AppContent() {
 
   // Dashboard content (authenticated user) with homepage
   return (
-    <WebSocketProvider>
+    <ChatAPIProvider>
       <HomePage />
-    </WebSocketProvider>
+    </ChatAPIProvider>
   );
 }

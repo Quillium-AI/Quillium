@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"net/http"
-	"strings"
 	"os"
+	"strings"
 )
 
 // CORSType represents the type of CORS configuration to apply

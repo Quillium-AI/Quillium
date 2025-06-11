@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { FormEvent } from 'react';
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchApi } from '../utils/apiClient';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
@@ -55,30 +54,24 @@ function AdminSettingsContent() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
 
-  // Fetch users when the active section is 'users'
-  useEffect(() => {
-    if (activeSection === 'users' && isAuthenticated && userInfo?.isAdmin) {
-      fetchUsers();
-    }
-  }, [activeSection, isAuthenticated, userInfo]);
-
   // Function to fetch users
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoadingUsers(true);
     try {
       const response = await fetchApi('/api/admin/users');
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
+      
       const data = await response.json();
       
       // Ensure correct casing for isAdmin property
-      const processedUsers = data.map((user: any) => ({
+      const processedUsers = data.map((user: User) => ({
         id: user.id,
         username: user.username,
         email: user.email,
-        isAdmin: user.isAdmin === true || user.is_admin === true || user.IsAdmin === true,
-        isSso: user.isSso || user.is_sso || user.IsSso || false
+        isAdmin: user.isAdmin === true,
+        isSso: user.isSso || user.isSso || false
       }));
       
       setUsers(processedUsers);
@@ -88,7 +81,14 @@ function AdminSettingsContent() {
     } finally {
       setIsLoadingUsers(false);
     }
-  };
+  }, []);
+
+  // Fetch users when the active section is 'users'
+  useEffect(() => {
+    if (activeSection === 'users' && isAuthenticated && userInfo?.isAdmin) {
+      fetchUsers();
+    }
+  }, [activeSection, isAuthenticated, userInfo, fetchUsers]);
 
   // Function to handle user creation
   const handleCreateUser = async (e: FormEvent) => {

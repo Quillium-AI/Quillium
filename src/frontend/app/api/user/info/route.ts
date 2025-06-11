@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     let responseData = {};
     try {
       responseData = await response.json();
-    } catch (e) {
-      // If response is not JSON, use empty object
+    } catch {
+      responseData = {};
     }
     
     const res = NextResponse.json(responseData, { status: response.status });

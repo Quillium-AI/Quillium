@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     let data = [];
     try {
       data = await response.json();
-    } catch (e) {
-      // If response is not JSON, use empty array
+    } catch {
+      data = [];
     }
 
     // Return response with same status

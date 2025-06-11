@@ -69,7 +69,7 @@ interface IndexerMetrics {
 }
 
 export default function IndexerDashboard() {
-  const [settings, setSettings] = useState<AdminSettings | null>(null);
+  const [settings] = useState<AdminSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<IndexerMetrics | null>(null);
@@ -150,7 +150,7 @@ export default function IndexerDashboard() {
         }
       };
     }
-  }, [settings]);
+  }, [settings, refreshTimer]);
 
   const handleRefreshClick = () => {
     fetchElasticsearchData();

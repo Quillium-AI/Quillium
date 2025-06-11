@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FiCheckCircle, FiAlertCircle, FiBarChart2, FiRefreshCw } from 'react-icons/fi';
 import { fetchApi } from '../utils/apiClient';
 
@@ -26,13 +26,48 @@ export default function WebcrawlerDashboard() {
   const [readyStatus, setReadyStatus] = useState<HealthStatus | null>(null);
   const [liveStatus, setLiveStatus] = useState<HealthStatus | null>(null);
   const [version, setVersion] = useState<string | null>(null);
-  const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch metrics from webcrawler via backend proxy
+  const fetchWebcrawlerData = useCallback(async () => {
+    setIsRefreshing(true);
+    setError(null);
+
+    try {
+      // Fetch metrics through our Next.js API route proxy
+      const metricsResponse = await fetchApi('/api/webcrawler/metrics');
+      if (metricsResponse.ok) {
+        const metricsText = await metricsResponse.text();
+        const parsedMetrics = parsePrometheusMetrics(metricsText);
+        setMetrics(parsedMetrics);
+      }
+
+      // Fetch health checks through our Next.js API route proxy
+      const healthResponse = await fetchApi('/api/webcrawler/health');
+      if (healthResponse.ok) {
+        const healthData = await healthResponse.json();
+        setReadyStatus(healthData.ready);
+        setLiveStatus(healthData.live);
+        setVersion(healthData.version);
+      } else {
+        setReadyStatus({ status: "error" });
+        setLiveStatus({ status: "error" });
+        setVersion("Unknown");
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching webcrawler data:', err);
+      setError(`Failed to connect to webcrawler: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
 
   // Initial data fetch
   useEffect(() => {
     fetchWebcrawlerData();
-  }, []);
+  }, [fetchWebcrawlerData]);
 
   // Set up auto-refresh
   useEffect(() => {
@@ -43,7 +78,7 @@ export default function WebcrawlerDashboard() {
     return () => {
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [fetchWebcrawlerData]);
 
   // Parse Prometheus metrics text format
   const parsePrometheusMetrics = (metricsText: string): MetricsData => {
@@ -94,42 +129,6 @@ export default function WebcrawlerDashboard() {
     }
 
     return result;
-  };
-
-  // Fetch metrics from webcrawler via backend proxy
-  const fetchWebcrawlerData = async () => {
-    setIsRefreshing(true);
-    setError(null);
-
-    try {
-      // Fetch metrics through our Next.js API route proxy
-      const metricsResponse = await fetchApi('/api/webcrawler/metrics');
-      if (metricsResponse.ok) {
-        const metricsText = await metricsResponse.text();
-        const parsedMetrics = parsePrometheusMetrics(metricsText);
-        setMetrics(parsedMetrics);
-      }
-
-      // Fetch health checks through our Next.js API route proxy
-      const healthResponse = await fetchApi('/api/webcrawler/health');
-      if (healthResponse.ok) {
-        const healthData = await healthResponse.json();
-        setReadyStatus(healthData.ready);
-        setLiveStatus(healthData.live);
-        setVersion(healthData.version);
-      } else {
-        setReadyStatus({ status: "error" });
-        setLiveStatus({ status: "error" });
-        setVersion("Unknown");
-      }
-
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching webcrawler data:', err);
-      setError(`Failed to connect to webcrawler: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsRefreshing(false);
-    }
   };
 
   const handleRefreshClick = () => {

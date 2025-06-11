@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       const readyUrl = new URL('/readyz', settings.webcrawler_url).toString();
       const readyResponse = await fetch(readyUrl);
       healthChecks.ready = { status: readyResponse.ok ? 'ok' : 'error' };
-    } catch (error) {
+    } catch {
       healthChecks.ready = { status: 'error' };
     }
 
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       const liveUrl = new URL('/livez', settings.webcrawler_url).toString();
       const liveResponse = await fetch(liveUrl);
       healthChecks.live = { status: liveResponse.ok ? 'ok' : 'error' };
-    } catch (error) {
+    } catch {
       healthChecks.live = { status: 'error' };
     }
 
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       } else {
         healthChecks.version = { version: 'unknown' };
       }
-    } catch (error) {
+    } catch {
       healthChecks.version = { version: 'unknown' };
     }
     
