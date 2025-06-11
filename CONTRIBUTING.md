@@ -16,12 +16,6 @@ Thank you for your interest in contributing to Quillium! This document provides 
 
 Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## CLA (Contributor License Agreement)
-
-Before your contribution can be accepted, you need to sign our Contributor License Agreement (CLA). We use CLA Assistant (cla-assistant.io) to manage our CLA process.
-
-When you create a pull request, CLA Assistant will automatically check if you've signed the CLA. If not, you'll be prompted to do so directly within the pull request by clicking on a link that will take you to the CLA Assistant website where you can sign the agreement with your GitHub account.
-
 ## Commit Message Conventions
 
 We follow standard git commit message conventions as outlined in our [Code of Conduct](CODE_OF_CONDUCT.md#commit-message-conventions). Please ensure your commit messages follow this format.
@@ -75,10 +69,9 @@ Enhancement suggestions are also tracked as GitLab issues. Please provide clear 
 
 2. Run the application in development mode
    ```bash
-   # Using the Makefile (recommended)
-   make dev
-   
-   # Or manually
+   # Recommended:
+   docker compose up --build
+
    # Terminal 1 - Run the backend
    cd src/backend
    go run main.go
@@ -128,16 +121,15 @@ The Quillium project is organized into several key components:
 ```
 src/backend/
 ├── cmd/                  # Application entry points
-│   └── server/           # Main server application
 ├── internal/             # Internal packages
 │   ├── api/              # API handlers and routes
-│   │   ├── restapi/      # REST API implementation
-│   │   └── wsapi/        # WebSocket API implementation
-│   ├── auth/             # Authentication logic
-│   ├── chat/             # Chat functionality
+│   ├── chats/            # Chat functionality
 │   ├── db/               # Database access and models
+│   ├── initialization/   # Initialization logic
+│   ├── llm_providers/    # Language model providers
 │   ├── security/         # Security utilities
 │   ├── settings/         # Settings management
+│   ├── sso/              # Single sign-on functionality
 │   └── user/             # User management
 ├── migrations/           # Database migrations
 └── tests/                # Integration tests
@@ -149,12 +141,7 @@ src/frontend/
 ├── public/               # Static assets
 ├── src/
 │   ├── components/       # Reusable UI components
-│   ├── contexts/         # React contexts
-│   ├── hooks/            # Custom React hooks
-│   ├── pages/            # Page components
-│   ├── services/         # API service clients
-│   ├── styles/           # Global styles
-│   └── utils/            # Utility functions
+│   └── pages/            # Page components
 └── tests/                # Frontend tests
 ```
 

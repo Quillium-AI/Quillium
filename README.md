@@ -156,8 +156,6 @@ Once the application is running, you can access it at http://localhost:8080. Ent
 
 We welcome contributions to Quillium! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute.
 
-Before contributing, please sign our Contributor License Agreement (CLA) which will be automatically requested when you create your first pull request.
-
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
