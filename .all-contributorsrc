@@ -38,6 +38,16 @@
         "ideas",
         "design"
       ]
+    },
+    {
+      "login": "delaw",
+      "name": "Devaughn Lawrence",
+      "avatar_url": "https://gitlab.cherkaoui.ch/uploads/-/system/user/avatar/2/avatar.png",
+      "profile": "https://gitlab.cherkaoui.ch/delaw",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
     }
   ]
 }
