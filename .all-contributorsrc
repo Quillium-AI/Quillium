@@ -27,6 +27,17 @@
         "maintenance",
         "design"
       ]
+    },
+    {
+      "login": "devinvoegele",
+      "name": "Devin Voegele",
+      "avatar_url": "https://secure.gravatar.com/avatar/1c8e8c64e09ac3da4d08a7bfd231884ebc09d55cbe06246fbc300264e7babaac?s=80&d=identicon",
+      "profile": "https://gitlab.cherkaoui.ch/devinvoegele",
+      "contributions": [
+        "code",
+        "ideas",
+        "design"
+      ]
     }
   ]
 }
