@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/settings"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/sso"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/chats"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/sso"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/user"
 	"github.com/jackc/pgx/v5"
 )
 

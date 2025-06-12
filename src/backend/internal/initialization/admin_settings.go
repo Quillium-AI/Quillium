@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/settings"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
 )
 
 // InitializeAdminSettings initializes or updates admin settings with environment variables

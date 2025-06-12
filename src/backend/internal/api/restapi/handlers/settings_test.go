@@ -9,11 +9,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/handlers"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/settings"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/handlers"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/middleware"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/user"
 )
 
 // Setup test database for settings tests

@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/handlers"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/handlers"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/middleware"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
 )
 
 // Initialize sets up the REST API with the necessary dependencies

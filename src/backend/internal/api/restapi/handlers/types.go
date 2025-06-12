@@ -1,6 +1,6 @@
 package handlers
 
-import "github.com/Quillium-AI/Quillium/src/backend/internal/settings"
+import "gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
 
 // LoginRequest represents a login request
 type LoginRequest struct {

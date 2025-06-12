@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/middleware"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/chats"
 )
 
 // GetChats returns all chats for the current user

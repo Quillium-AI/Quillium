@@ -1,6 +1,6 @@
 package llmproviders
 
-import "github.com/Quillium-AI/Quillium/src/backend/internal/chats"
+import "gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/chats"
 
 // ChatResponse represents the structured response from the Chat function
 type ChatResponse struct {

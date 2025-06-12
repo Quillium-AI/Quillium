@@ -1,4 +1,4 @@
-module github.com/Quillium-AI/Quillium/src/backend
+module gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend
 
 go 1.24.1
 
