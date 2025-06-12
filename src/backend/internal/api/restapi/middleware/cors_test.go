@@ -68,7 +68,7 @@ func TestWithCORS(t *testing.T) {
 			// Check the CORS headers
 			origin := rec.Header().Get("Access-Control-Allow-Origin")
 			if origin != tc.expectedOrigin {
-				t.Errorf("Expected Access-Control-Allow-Origin: %s, got: %s", 
+				t.Errorf("Expected Access-Control-Allow-Origin: %s, got: %s",
 					tc.expectedOrigin, origin)
 			}
 
@@ -141,7 +141,7 @@ func TestPreflightRequests(t *testing.T) {
 
 			// Check the response code
 			if rec.Code != tc.expectedStatus {
-				t.Errorf("Expected status %d for OPTIONS request, got %d", 
+				t.Errorf("Expected status %d for OPTIONS request, got %d",
 					tc.expectedStatus, rec.Code)
 			}
 

@@ -41,7 +41,7 @@ func TestChatContentToJSON(t *testing.T) {
 
 	// Verify key fields are present
 	if result["title"] != chatContent.Title {
-		t.Errorf("Expected title to be %s, got %s", 
+		t.Errorf("Expected title to be %s, got %s",
 			chatContent.Title, result["title"])
 	}
 
@@ -53,7 +53,7 @@ func TestChatContentToJSON(t *testing.T) {
 
 	// Verify message count
 	if len(messages) != len(chatContent.Messages) {
-		t.Errorf("Expected %d messages, got %d", 
+		t.Errorf("Expected %d messages, got %d",
 			len(chatContent.Messages), len(messages))
 	}
 
@@ -65,12 +65,12 @@ func TestChatContentToJSON(t *testing.T) {
 		}
 
 		if firstMessage["role"] != chatContent.Messages[0].Role {
-			t.Errorf("Expected first message role to be %s, got %s", 
+			t.Errorf("Expected first message role to be %s, got %s",
 				chatContent.Messages[0].Role, firstMessage["role"])
 		}
 
 		if firstMessage["content"] != chatContent.Messages[0].Content {
-			t.Errorf("Expected first message content to be %s, got %s", 
+			t.Errorf("Expected first message content to be %s, got %s",
 				chatContent.Messages[0].Content, firstMessage["content"])
 		}
 	}
@@ -103,7 +103,7 @@ func TestChatContentFromJSON(t *testing.T) {
 
 	// Verify the parsed values
 	if result.Title != "Test Chat" {
-		t.Errorf("Expected Title to be %s, got %s", 
+		t.Errorf("Expected Title to be %s, got %s",
 			"Test Chat", result.Title)
 	}
 
@@ -115,12 +115,12 @@ func TestChatContentFromJSON(t *testing.T) {
 	// Verify first message
 	if len(result.Messages) > 0 {
 		if result.Messages[0].Role != "user" {
-			t.Errorf("Expected first message role to be %s, got %s", 
+			t.Errorf("Expected first message role to be %s, got %s",
 				"user", result.Messages[0].Role)
 		}
 
 		if result.Messages[0].Content != "Hello, how are you?" {
-			t.Errorf("Expected first message content to be %s, got %s", 
+			t.Errorf("Expected first message content to be %s, got %s",
 				"Hello, how are you?", result.Messages[0].Content)
 		}
 	}
@@ -128,12 +128,12 @@ func TestChatContentFromJSON(t *testing.T) {
 	// Verify second message
 	if len(result.Messages) > 1 {
 		if result.Messages[1].Role != "assistant" {
-			t.Errorf("Expected second message role to be %s, got %s", 
+			t.Errorf("Expected second message role to be %s, got %s",
 				"assistant", result.Messages[1].Role)
 		}
 
 		if result.Messages[1].Content != "I'm doing well, thank you for asking!" {
-			t.Errorf("Expected second message content to be %s, got %s", 
+			t.Errorf("Expected second message content to be %s, got %s",
 				"I'm doing well, thank you for asking!", result.Messages[1].Content)
 		}
 	}

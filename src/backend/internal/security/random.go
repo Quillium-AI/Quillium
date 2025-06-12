@@ -13,7 +13,7 @@ func GenerateRandomString(length int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Convert to base64 for a URL-safe string
 	return base64.URLEncoding.EncodeToString(b), nil
 }

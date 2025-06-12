@@ -10,7 +10,7 @@ func (c *ChatContent) ToJSON() (string, error) {
 		Title:    c.Title,
 		Messages: c.Messages,
 	}
-	
+
 	jsonStr, err := json.Marshal(contentWithoutSources)
 	if err != nil {
 		return "", err
@@ -26,14 +26,14 @@ func (c *ChatContent) FromJSON(jsonStr string) (*ChatContent, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create a new ChatContent with the parsed data
 	content := &ChatContent{
 		Title:    contentWithoutSources.Title,
 		Messages: contentWithoutSources.Messages,
 		// Sources will be loaded separately from the database
-		Sources:  []Source{},
+		Sources: []Source{},
 	}
-	
+
 	return content, nil
 }

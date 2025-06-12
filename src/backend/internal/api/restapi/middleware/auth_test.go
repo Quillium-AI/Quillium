@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/user"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 // shouldRunTests checks if we should run the tests that require a database

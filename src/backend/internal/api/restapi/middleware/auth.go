@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 var jwtSecret []byte

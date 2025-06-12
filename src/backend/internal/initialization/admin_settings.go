@@ -34,7 +34,6 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 			ElasticsearchUsername: "",
 			ElasticsearchPassword: "",
 			EnvOverrides:          []string{},
-
 		}
 		settingsUpdated = true
 	}

@@ -59,7 +59,7 @@ func TestUserValidatePassword(t *testing.T) {
 
 			// Check if the result matches expected
 			if isValid != tc.expectedValid {
-				t.Errorf("Password validation failed. Expected %v, got %v", 
+				t.Errorf("Password validation failed. Expected %v, got %v",
 					tc.expectedValid, isValid)
 			}
 		})

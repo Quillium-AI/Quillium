@@ -35,22 +35,22 @@ func TestSsoProviderToJSON(t *testing.T) {
 
 	// Verify key fields are present with correct values
 	if result["client_id"] != provider.ClientID {
-		t.Errorf("Expected client_id to be %s, got %s", 
+		t.Errorf("Expected client_id to be %s, got %s",
 			provider.ClientID, result["client_id"])
 	}
 
 	if result["client_secret"] != provider.ClientSecret {
-		t.Errorf("Expected client_secret to be %s, got %s", 
+		t.Errorf("Expected client_secret to be %s, got %s",
 			provider.ClientSecret, result["client_secret"])
 	}
 
 	if result["provider"] != provider.Provider {
-		t.Errorf("Expected provider to be %s, got %s", 
+		t.Errorf("Expected provider to be %s, got %s",
 			provider.Provider, result["provider"])
 	}
 
 	if result["auth_type"] != provider.AuthType {
-		t.Errorf("Expected auth_type to be %s, got %s", 
+		t.Errorf("Expected auth_type to be %s, got %s",
 			provider.AuthType, result["auth_type"])
 	}
 }
@@ -76,27 +76,27 @@ func TestSsoProviderFromJSON(t *testing.T) {
 
 	// Verify the parsed values
 	if provider.ClientID != "client123" {
-		t.Errorf("Expected ClientID to be %s, got %s", 
+		t.Errorf("Expected ClientID to be %s, got %s",
 			"client123", provider.ClientID)
 	}
 
 	if provider.ClientSecret != "secret456" {
-		t.Errorf("Expected ClientSecret to be %s, got %s", 
+		t.Errorf("Expected ClientSecret to be %s, got %s",
 			"secret456", provider.ClientSecret)
 	}
 
 	if provider.Provider != "google" {
-		t.Errorf("Expected Provider to be %s, got %s", 
+		t.Errorf("Expected Provider to be %s, got %s",
 			"google", provider.Provider)
 	}
 
 	if provider.RedirectURL != "https://example.com/callback" {
-		t.Errorf("Expected RedirectURL to be %s, got %s", 
+		t.Errorf("Expected RedirectURL to be %s, got %s",
 			"https://example.com/callback", provider.RedirectURL)
 	}
 
 	if provider.AuthType != "OAuth2" {
-		t.Errorf("Expected AuthType to be %s, got %s", 
+		t.Errorf("Expected AuthType to be %s, got %s",
 			"OAuth2", provider.AuthType)
 	}
 }

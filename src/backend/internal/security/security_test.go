@@ -25,12 +25,12 @@ func TestHashPassword(t *testing.T) {
 			if hashedPassword == nil {
 				t.Fatal("Hashed password is nil")
 			}
-			
+
 			// Verify the hash is not empty
 			if *hashedPassword == "" {
 				t.Error("Hashed password is empty string")
 			}
-			
+
 			// Verify the hash is different from the original password
 			if *hashedPassword == tc.password {
 				t.Error("Hashed password is the same as original password")
@@ -46,7 +46,7 @@ func TestEncryptDecryptPassword(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize encryption: %v", err)
 	}
-	
+
 	// Test cases
 	testCases := []struct {
 		name     string
@@ -57,7 +57,7 @@ func TestEncryptDecryptPassword(t *testing.T) {
 		{"Special characters", "p@$$w0rd!#%^&*()"},
 		{"Long password", "this is a very long password that exceeds 32 characters"},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Encrypt
@@ -68,12 +68,12 @@ func TestEncryptDecryptPassword(t *testing.T) {
 			if encrypted == nil {
 				t.Fatal("Encrypted password is nil")
 			}
-			
+
 			// Verify encrypted password is different from original
 			if *encrypted == tc.password {
 				t.Error("Encrypted password is the same as original password")
 			}
-			
+
 			// Decrypt
 			decrypted, err := DecryptPassword(*encrypted)
 			if err != nil {
@@ -82,7 +82,7 @@ func TestEncryptDecryptPassword(t *testing.T) {
 			if decrypted == nil {
 				t.Fatal("Decrypted password is nil")
 			}
-			
+
 			// Compare
 			if *decrypted != tc.password {
 				t.Errorf("Decrypted password does not match original. Got %q, want %q", *decrypted, tc.password)

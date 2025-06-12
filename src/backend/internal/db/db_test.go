@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/chats"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/user"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // checkDBConnection attempts to connect to the test database
@@ -401,12 +401,12 @@ func TestAdminSettings(t *testing.T) {
 
 	// Create test admin settings
 	testSettings := &settings.AdminSettings{
-		OpenAIBaseURL:           "https://api.openai.com",
-		OpenAIAPIKey_encrypt:    "encrypted_key_2",
-		LLMProfileSpeed:         "gpt-3.5-turbo",
-		LLMProfileBalanced:      "gpt-4",
-		LLMProfileQuality:       "gpt-4-turbo",
-		EnableSignUps:           true,
+		OpenAIBaseURL:        "https://api.openai.com",
+		OpenAIAPIKey_encrypt: "encrypted_key_2",
+		LLMProfileSpeed:      "gpt-3.5-turbo",
+		LLMProfileBalanced:   "gpt-4",
+		LLMProfileQuality:    "gpt-4-turbo",
+		EnableSignUps:        true,
 	}
 
 	// Create the admin settings
