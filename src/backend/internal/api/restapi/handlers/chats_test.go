@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/handlers"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/chats"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/handlers"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/middleware"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/chats"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/user"
 )
 
 // Setup test database

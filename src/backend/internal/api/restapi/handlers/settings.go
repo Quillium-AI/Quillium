@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/settings"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/middleware"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
 )
 
 func UpdateUserSettings(w http.ResponseWriter, r *http.Request) {

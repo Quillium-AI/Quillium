@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
 )
 
 // Server represents the API server

@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
 )
 
 // ShouldRunTests checks if we should run the tests that require a database

@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
 )
 
 // NewServer creates a new API server

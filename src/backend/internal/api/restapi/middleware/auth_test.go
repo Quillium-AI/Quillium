@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/db"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/db"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/user"
 	"github.com/golang-jwt/jwt/v5"
 )
 

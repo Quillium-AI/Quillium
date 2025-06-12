@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/api/restapi/middleware"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
-	"github.com/Quillium-AI/Quillium/src/backend/internal/user"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/middleware"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/user"
 )
 
 // GenerateAPIKey creates a new API key for the authenticated user

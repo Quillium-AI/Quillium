@@ -3,7 +3,7 @@ package user
 import (
 	"testing"
 
-	"github.com/Quillium-AI/Quillium/src/backend/internal/security"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
 )
 
 func TestUserValidatePassword(t *testing.T) {
