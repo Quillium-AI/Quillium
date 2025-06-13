@@ -16,4 +16,6 @@ type AdminSettings struct {
 	ElasticsearchUsername string   `json:"elasticsearch_username"`
 	ElasticsearchPassword string   `json:"elasticsearch_password"`
 	EnvOverrides          []string `json:"env_overrides"`
+	CrawlerIndexName      string   `json:"crawler_index_name"`
+	FullContentEnabled    bool     `json:"full_content_enabled"`
 }

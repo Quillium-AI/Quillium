@@ -1,12 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/api/restapi/middleware"
 	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/chats"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/elasticsearch"
+	llmproviders "gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/llm_providers"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/security"
 )
 
 // GetChats returns all chats for the current user
@@ -149,4 +156,192 @@ func DeleteChat(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Chat deleted successfully"})
+}
+
+// HandleChat handles chat message streaming via SSE
+func HandleChat(w http.ResponseWriter, r *http.Request) {
+	// Only handle SSE requests
+	if r.Header.Get("Accept") != "text/event-stream" {
+		http.Error(w, "SSE required", http.StatusBadRequest)
+		return
+	}
+	handleSSE(w, r)
+}
+
+func handleSSE(w http.ResponseWriter, r *http.Request) {
+	// Set headers for SSE
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	// Parse request body
+	var req ChatRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Convert chatID to int
+	chatIDInt, err := strconv.Atoi(req.ChatID)
+	if err != nil {
+		http.Error(w, "Invalid chat ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get the chat content from the database
+	chat, err := dbConn.GetChatContent(chatIDInt)
+	if err != nil {
+		http.Error(w, "Failed to get chat", http.StatusInternalServerError)
+		return
+	}
+
+	// Get user ID from context (set by auth middleware)
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Verify user owns this chat
+	chatBelongsToUser, err := dbConn.VerifyChatOwnership(chatIDInt, userID)
+	if err != nil {
+		http.Error(w, "Failed to verify chat ownership", http.StatusInternalServerError)
+		return
+	}
+
+	if !chatBelongsToUser {
+		http.Error(w, "Chat not found", http.StatusNotFound)
+		return
+	}
+
+	// Create a channel to receive chat updates
+	updates := make(chan string)
+	_, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	// Start processing the chat in a goroutine
+	go func() {
+		defer close(updates)
+		
+		// Add user message to chat history
+		userMessage := chats.Message{
+			Role:    "user",
+			Content: req.Messages[len(req.Messages)-1].Content,
+			MsgNum:  len(chat.Messages) + 1,
+		}
+
+		adminSettings, err := dbConn.GetAdminSettings()
+		if err != nil {
+			http.Error(w, "Failed to get admin settings", http.StatusInternalServerError)
+			return
+		}
+
+		// Extract model from profile
+		var model string
+		var limit int
+		switch req.QualityProfile {
+			case "speed":
+				model = adminSettings.LLMProfileSpeed
+				limit = 10
+			case "balanced":
+				model = adminSettings.LLMProfileBalanced
+				limit = 15
+			case "quality":
+				model = adminSettings.LLMProfileQuality
+				limit = 20
+		}
+
+		OpenAIAPIKey, err := security.DecryptPassword(adminSettings.OpenAIAPIKey_encrypt)
+		if err != nil {
+			http.Error(w, "Failed to decrypt API key", http.StatusInternalServerError)
+			return
+		}
+
+		// Get the highest message number and increment by 1
+		msgNum := 0
+		if len(chat.Messages) > 0 {
+			msgNum = chat.Messages[len(chat.Messages)-1].MsgNum + 1
+		}
+		sources, err := elasticsearch.SearchElasticSearch(dbConn, req.Query, limit, msgNum)
+		if err != nil {
+			http.Error(w, "Failed to search Elasticsearch", http.StatusInternalServerError)
+			return
+		}
+		
+		// Get AI response (streaming)
+		var responseBuilder strings.Builder
+
+		// Convert []Message to []string for strings.Join
+		messageStrings := make([]string, len(chat.Messages))
+		for i, msg := range chat.Messages {
+			messageStrings[i] = fmt.Sprintf("%s: %s", msg.Role, msg.Content)
+		}
+		chathistory := fmt.Sprintf("%s\n\n", strings.Join(messageStrings, "\n"))
+		
+		_, err = llmproviders.Chat(model, chathistory, *OpenAIAPIKey, adminSettings.OpenAIBaseURL, req.Query, sources, adminSettings.FullContentEnabled, func(resp llmproviders.StreamResponse) {
+			// Check for errors
+			if resp.Error != nil {
+				log.Printf("Streaming error: %v", resp.Error)
+				return
+			}
+			
+			// Add content to the response builder
+			responseBuilder.WriteString(resp.Content)
+			
+			// Send the chunk to the client
+			select {
+			case updates <- resp.Content:
+				// Successfully sent the chunk
+			default:
+				// Channel is blocked or closed, skip this chunk
+				log.Printf("Could not send chunk to updates channel")
+			}
+		})
+		
+		if err != nil {
+			http.Error(w, "Failed to generate AI response", http.StatusInternalServerError)
+			return
+		}
+		
+		// Use the complete response from the builder
+		response := responseBuilder.String()
+		// Add assistant message to chat history
+		assistantMessage := chats.Message{
+			Role:    "assistant",
+			Content: response,
+			MsgNum:  msgNum,
+		}
+
+		// Update chat in database
+		chatContent := &chats.ChatContent{
+			Title:    chat.Title,
+			Messages: append(chat.Messages, userMessage, assistantMessage),
+		}
+		// Update the chat content in the database
+		if err := dbConn.UpdateChatContent(chatIDInt, chatContent); err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update chat"})
+		}
+	}()
+
+	// Stream updates to the client
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	// Send initial empty message to establish connection
+	json.NewEncoder(w).Encode(map[string]string{"event": "start", "data": ""})
+	flusher.Flush()
+
+	// Stream the response
+	for content := range updates {
+		// Send SSE event
+		json.NewEncoder(w).Encode(map[string]string{"event": "message", "data": content})
+		flusher.Flush()
+	}
+
+	// Send completion event
+	json.NewEncoder(w).Encode(map[string]string{"event": "done", "data": "\"done\""})
+	flusher.Flush()
 }

@@ -9,10 +9,11 @@ type Message struct {
 
 // Source represents a source of information used in a response
 type Source struct {
-	Title       string `json:"title"`       // Title of the source
-	URL         string `json:"url"`         // URL of the source
-	Description string `json:"description"` // Description of the source
-	MsgNum      int    `json:"msg_num"`     // Message number this source is associated with
+	Title       string `json:"title"`        // Title of the source
+	URL         string `json:"url"`          // URL of the source
+	Snippet     string `json:"snippet"`      // Content of the source
+	FullContent string `json:"full_content"` // Full content of the source
+	MsgNum      int    `json:"msg_num"`      // Message number this source is associated with
 }
 
 // ChatContent represents the content of a chat with a title and messages

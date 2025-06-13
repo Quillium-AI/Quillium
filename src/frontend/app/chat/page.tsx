@@ -96,17 +96,12 @@ function ChatPageContent() {
   const [chatId, setChatId] = useState<string | null>(null);
   const initialQueryRef = useRef<string | null>(searchParams?.get('query') ?? null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   // Toggle sidebar
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-  
-  // Close sidebar
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-  
+
   // Handle chat ID changes - redirect to specific chat URL when a chatId is assigned
   useEffect(() => {
     if (chatId) {
@@ -123,23 +118,23 @@ function ChatPageContent() {
         <div className="absolute -bottom-40 left-1/4 w-96 h-96 bg-[var(--primary)]/20 rounded-full blur-3xl"></div>
         <div className="absolute top-3/4 right-1/4 w-64 h-64 bg-[var(--secondary)]/10 rounded-full blur-3xl"></div>
       </div>
-      
+
       {/* Sidebar */}
-      <ChatSidebar isOpen={isSidebarOpen} closeSidebar={closeSidebar} />
-      
+      <ChatSidebar isOpen={isSidebarOpen} closeSidebar={toggleSidebar} />
+
       {/* Overlay for mobile sidebar */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-10 lg:hidden"
-          onClick={closeSidebar}
+          onClick={toggleSidebar}
         />
       )}
-      
+
       <div className="container mx-auto px-4 py-6 max-w-5xl relative z-10">
         {/* Chat header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <button 
+            <button
               onClick={toggleSidebar}
               className="text-gray-300 hover:text-white transition-colors"
             >
@@ -147,8 +142,8 @@ function ChatPageContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => router.push('/')}
               className="text-gray-300 hover:text-white transition-colors"
             >
@@ -160,9 +155,9 @@ function ChatPageContent() {
               </div>
             </button>
           </div>
-          
+
           <h1 className="text-xl font-semibold hidden sm:block">New Chat</h1>
-          
+
           <div className="w-6"></div> {/* Spacer to balance the flex layout */}
         </div>
 

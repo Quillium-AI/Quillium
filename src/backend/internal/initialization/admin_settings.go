@@ -33,7 +33,9 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 			ElasticsearchURL:      "",
 			ElasticsearchUsername: "",
 			ElasticsearchPassword: "",
+			CrawlerIndexName:      "",
 			EnvOverrides:          []string{},
+			FullContentEnabled:    false,
 		}
 		settingsUpdated = true
 	}
@@ -134,6 +136,26 @@ func InitializeAdminSettings(dbConn *db.DB) error {
 		settingsUpdated = true
 		envOverrides = append(envOverrides, "ELASTICSEARCH_PASSWORD")
 		log.Println("Updated Elasticsearch password from environment variable")
+	}
+
+	// Crawler Index Name
+	crawlerIndexName := os.Getenv("CRAWLER_INDEX_NAME")
+	if crawlerIndexName != "" {
+		adminSettings.CrawlerIndexName = crawlerIndexName
+		settingsUpdated = true
+		envOverrides = append(envOverrides, "CRAWLER_INDEX_NAME")
+		log.Println("Updated crawler index name from environment variable")
+	}
+
+	// Full Content Enabled
+	fullContentEnabled := os.Getenv("FULL_CONTENT_ENABLED")
+	if fullContentEnabled != "" {
+		// Convert string to bool (treat "true" or "1" as true)
+		fullContentEnabledBool := fullContentEnabled == "true" || fullContentEnabled == "1"
+		adminSettings.FullContentEnabled = fullContentEnabledBool
+		settingsUpdated = true
+		envOverrides = append(envOverrides, "FULL_CONTENT_ENABLED")
+		log.Println("Updated full content enabled setting from environment variable")
 	}
 
 	// Set environment overrides

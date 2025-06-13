@@ -1,6 +1,9 @@
 package handlers
 
-import "gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
+import (
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/chats"
+	"gitlab.cherkaoui.ch/quillium-ai/quillium/src/backend/internal/settings"
+)
 
 // LoginRequest represents a login request
 type LoginRequest struct {
@@ -57,4 +60,22 @@ type ChatSummary struct {
 // UpdateUserSettingsRequest represents the request body for updating user settings
 type UpdateUserSettingsRequest struct {
 	Settings settings.UserSettings `json:"settings"`
+}
+
+// ChatRequest represents a request to start or continue a chat
+// Used by /api/chat/stream (request body, if needed)
+type ChatRequest struct {
+	ChatID         string          `json:"chatId"`
+	QualityProfile string          `json:"qualityprofile"`
+	Query          string          `json:"query"`
+	Messages       []chats.Message `json:"messages"`
+}
+
+// ChatStreamResponse represents a streaming response from the AI
+// Used by /api/chat/stream (response)
+type ChatStreamResponse struct {
+	ChatID  string         `json:"chatId"`
+	Content string         `json:"content"`
+	Done    bool           `json:"done"`
+	Sources []chats.Source `json:"sources,omitempty"`
 }

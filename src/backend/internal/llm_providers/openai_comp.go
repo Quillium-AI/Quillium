@@ -15,8 +15,19 @@ import (
 
 // Chat function implements streaming for OpenAI responses
 // The callback function is called for each chunk of the response
-func Chat(model string, api_key string, base_url string, query string, index_results []string, sources []chats.Source, callback func(StreamResponse)) (ChatResponse, error) {
+func Chat(model string, chatHistory string, api_key string, base_url string, query string, sources []chats.Source, full_content bool, callback func(StreamResponse)) (ChatResponse, error) {
 	log.Printf("Preparing OpenAI streaming request parameters")
+
+	var sourceContent []string
+
+	for _, source := range sources {
+		source.Snippet = strings.TrimSpace(source.Snippet)
+		if full_content {
+			sourceContent = append(sourceContent, fmt.Sprintf("Title: %s\nURL: %s\nSnippet: %s\nFull Content: %s\n\n", source.Title, source.URL, source.Snippet, source.FullContent))
+		} else {
+			sourceContent = append(sourceContent, fmt.Sprintf("Title: %s\nURL: %s\nSnippet: %s\n\n", source.Title, source.URL, source.Snippet))
+		}
+	}
 
 	// Create system message content
 	systemMessageContent := `You are Quillium, an AI assistant. Your purpose is to answer user questions by searching and summarizing relevant information from trusted sources.
@@ -34,8 +45,8 @@ func Chat(model string, api_key string, base_url string, query string, index_res
 							Always behave like a helpful, knowledgeable, and trustworthy research assistant who thoroughly cites multiple sources.`
 
 	// Create user message content with query and index results
-	userMessageContent := fmt.Sprintf("Here is the Users Query: %s\n\nHere are the index results related to the query: %s",
-		query, strings.Join(index_results, "\n"))
+	userMessageContent := fmt.Sprintf("Here is the Users Query: %s\n\nHere are the index results related to the query: %s\n\nHere is the current History: %s\n\n",
+		query, strings.Join(sourceContent, "\n"), chatHistory)
 
 	// Create the request payload
 	payload := map[string]interface{}{
