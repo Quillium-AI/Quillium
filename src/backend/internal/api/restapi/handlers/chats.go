@@ -222,7 +222,7 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 	// Start processing the chat in a goroutine
 	go func() {
 		defer close(updates)
-		
+
 		// Add user message to chat history
 		userMessage := chats.Message{
 			Role:    "user",
@@ -267,7 +267,7 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to search Elasticsearch", http.StatusInternalServerError)
 			return
 		}
-		
+
 		// Get AI response (streaming)
 		var responseBuilder strings.Builder
 
@@ -277,17 +277,17 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 			messageStrings[i] = fmt.Sprintf("%s: %s", msg.Role, msg.Content)
 		}
 		chathistory := fmt.Sprintf("%s\n\n", strings.Join(messageStrings, "\n"))
-		
+
 		_, err = llmproviders.Chat(model, chathistory, *OpenAIAPIKey, adminSettings.OpenAIBaseURL, req.Query, sources, adminSettings.FullContentEnabled, func(resp llmproviders.StreamResponse) {
 			// Check for errors
 			if resp.Error != nil {
 				log.Printf("Streaming error: %v", resp.Error)
 				return
 			}
-			
+
 			// Add content to the response builder
 			responseBuilder.WriteString(resp.Content)
-			
+
 			// Send the chunk to the client
 			select {
 			case updates <- resp.Content:
@@ -297,12 +297,12 @@ func handleSSE(w http.ResponseWriter, r *http.Request) {
 				log.Printf("Could not send chunk to updates channel")
 			}
 		})
-		
+
 		if err != nil {
 			http.Error(w, "Failed to generate AI response", http.StatusInternalServerError)
 			return
 		}
-		
+
 		// Use the complete response from the builder
 		response := responseBuilder.String()
 		// Add assistant message to chat history
